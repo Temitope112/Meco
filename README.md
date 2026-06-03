@@ -1,6 +1,6 @@
 # 🚗 Meco
 
-CarFix is a modern automotive service booking platform built with **Next.js**, **React**, and **Tailwind CSS**.
+Meco is a modern automotive service booking platform built with **Next.js**, **React**, and **Tailwind CSS**.
 It helps users discover trusted mechanics, explore vehicle services, and book car repairs or maintenance easily.
 
 ---
