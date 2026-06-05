@@ -48,13 +48,16 @@ export default function Navbar() {
 
           {/* Desktop Buttons */}
           <div className="hidden lg:flex items-center gap-3">
-            <button className="rounded-lg border border-zinc-700 px-5 py-2 text-sm text-white transition hover:border-zinc-500 cursor-pointer">
-              Log In
-            </button>
-
-            <button className="rounded-lg bg-orange-500 px-5 py-2 text-sm font-medium text-white transition hover:bg-orange-600 cursor-pointer">
-              Sign Up
-            </button>
+             <Link href="/login">
+              <button className="rounded-lg border border-zinc-700 px-5 py-2 text-sm text-white transition hover:border-zinc-500 cursor-pointer">
+                Log In
+              </button>
+            </Link>
+            <Link href="/sign-up">
+              <button className="rounded-lg bg-orange-500 px-5 py-2 text-sm font-medium text-white transition hover:bg-orange-600 cursor-pointer">
+                Sign Up
+              </button>
+            </Link>
           </div>
 
           {/* Mobile Toggle */}
