@@ -162,9 +162,9 @@ export default function Home() {
       {/* CTA CARD */}
       <div className="relative overflow-hidden rounded-3xl">
         <img
-          src="/images/mechanic-banner.jpg"
+          src="/mechanic.png"
           alt="Mechanic"
-          className="h-[220px] w-full object-cover"
+          className="h-[240px] w-full object-cover"
         />
 
         <div className="absolute inset-0 bg-black/60" />
@@ -195,7 +195,7 @@ export default function Home() {
         What Our Customers Say
       </h2>
 
-      <button className="text-sm text-gray-500 hover:text-black">
+      <button className="text-sm text-gray-500 hover:text-black cursor-pointer">
         View all reviews
       </button>
     </div>
@@ -305,7 +305,7 @@ export default function Home() {
     </div>
 
     {/* LOGOS */}
-    <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-6">
+    <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-6 cursor-pointer">
       {[
         "Toyota",
         "Honda",

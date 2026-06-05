@@ -76,6 +76,30 @@ export default function Footer() {
           </div>
         </div>
 
+        
+           {/* NEWSLETTER */}
+<div>
+  <h3 className="mt-6 text-base font-semibold text-white">
+    Newsletter
+  </h3>
+
+  <p className="mt-4 text-sm leading-6 text-white/60">
+    Stay updated with our latest offers and tips.
+  </p>
+
+  <div className="mt-5 space-y-4">
+    <input
+      type="email"
+      placeholder="Your email"
+      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-white/40"
+    />
+
+    <button className="w-full rounded-xl bg-yellow-400 px-5 py-3 text-sm font-medium text-black transition hover:bg-yellow-300 cursor-pointer">
+      Subscribe
+    </button>
+  </div>
+</div>
+
         <div className="mt-12 border-t border-white/10 pt-6 text-center text-sm text-white/40">
           © 2026 CarFix. All rights reserved.
         </div>
