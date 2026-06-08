@@ -1,6 +1,7 @@
 "use client";
+
 import Footer from "@/app/Component/layout/footer";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   ChevronLeft,
@@ -27,7 +28,7 @@ const timeSlots = [
   "8:00 PM",
 ];
 
-export default function BookingCheckout() {
+function BookingCheckoutContent() {
   const searchParams = useSearchParams();
   const serviceId = searchParams.get("serviceId");
 
@@ -48,9 +49,7 @@ export default function BookingCheckout() {
   const taxesAndFees = 2000;
   const total = subtotal + taxesAndFees;
 
-  const monthName = currentDate.toLocaleString("default", {
-    month: "long",
-  });
+  const monthName = currentDate.toLocaleString("default", { month: "long" });
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -311,7 +310,16 @@ export default function BookingCheckout() {
           </div>
         </div>
       </section>
+
       <Footer />
     </main>
+  );
+}
+
+export default function BookingCheckout() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-[#080d0e]" />}>
+      <BookingCheckoutContent />
+    </Suspense>
   );
 }
