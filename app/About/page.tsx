@@ -7,19 +7,19 @@ const mechanics = [
     id: 1,
     name: "John Doe",
     role: "Master Technician",
-    image: "/images/mechanic-1.jpg",
+    image: "/mechanic-1.png",
   },
   {
     id: 2,
     name: "John Doe",
     role: "Master Technician",
-    image: "/images/mechanic-2.jpg",
+    image: "/mechanic-2.png",
   },
   {
     id: 3,
     name: "Javon Doe",
     role: "Master Technician",
-    image: "/images/mechanic-3.jpg",
+    image: "/mechanic-3.png",
   },
 ];
 

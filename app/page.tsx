@@ -19,13 +19,13 @@ export default function Home() {
   <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1.2fr_0.8fr]">
     
     {/* LEFT SIDE */}
-    <div>
+      <div>
       <div className="relative overflow-hidden rounded-3xl">
         <img
           src="/images/hero-car.jpg"
           alt="Car"
           className="h-full w-full object-cover"
-        />
+        />  
 
         <div className="absolute inset-0 bg-black/50" />
 
@@ -95,14 +95,16 @@ export default function Home() {
             </p>
           </div>
         </div>
-      </div>
-    </div>
+       </div>
+    </div> 
+
+    
 
     {/* RIGHT SIDE */}
-    <div className="space-y-6">
+      <div className="space-y-6">  
       
-      {/* HEADER */}
-      <div className="flex items-center justify-between">
+       {/* HEADER */}
+        <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-black">
           Popular Services
         </h2>
@@ -110,10 +112,10 @@ export default function Home() {
         <button className="text-sm text-gray-500 hover:text-black cursor-pointer">
           View all
         </button>
-      </div>
+        </div>  
 
-      {/* SERVICE CARDS */}
-      <div className="grid grid-cols-2 gap-4">
+       {/* SERVICE CARDS */}
+         <div className="grid grid-cols-2 gap-4">
         {[
           {
             title: "Oil Change",
@@ -157,17 +159,20 @@ export default function Home() {
             </div>
           </div>
         ))}
-      </div>
+      </div>  
+    </div> 
+   </div> 
+</section>   
 
       {/* CTA CARD */}
-      <div className="relative overflow-hidden rounded-3xl">
+       {/* <div className="relative overflow-hidden rounded-3xl">
         <img
-          src="/mechanic.png"
+          src="/mechanics.png"
           alt="Mechanic"
-          className="h-[240px] w-full object-cover"
-        />
+          className="h-[240px] w-full object-cover" 
+          /> 
 
-        <div className="absolute inset-0 bg-black/60" />
+         <div className="absolute inset-0 bg-black/60" />
 
         <div className="absolute left-6 top-6 max-w-xs text-white">
           <h3 className="text-3xl font-bold leading-tight">
@@ -183,9 +188,8 @@ export default function Home() {
           </button>
         </div>
       </div>
-    </div>
-  </div>
-</section>
+      */}
+ 
 
 {/* TESTIMONIALS */}
 <section className="bg-[#f8f8f8] px-4 pb-16 sm:px-6 lg:px-8">
@@ -258,7 +262,7 @@ export default function Home() {
     
     <div className="relative h-[320px] w-full">
       <img
-        src="/images/cta-car.jpg"
+        src="/Car.png"
         alt="Luxury Car"
         className="h-full w-full object-cover"
       />
@@ -333,5 +337,3 @@ export default function Home() {
   );
 }
       
-    
-  

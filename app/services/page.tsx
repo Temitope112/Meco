@@ -1,42 +1,43 @@
 import Image from "next/image";
 import Link from "next/link";
+import Footer from "@/app/Component/layout/footer";
 
 const services = [
   {
     id: 1,
     title: "Oil Change",
     price: 30000,
-    image: "/images/oil-change.jpg",
+    image: "/oil-change.png",
   },
   {
     id: 2,
     title: "Engine Repair",
     price: 35000,
-    image: "/images/engine-repair.jpg",
+    image: "/engine-repair.png",
   },
   {
     id: 3,
     title: "Brake Service",
     price: 8000,
-    image: "/images/brake-service.jpg",
+    image: "/brake-service.png",
   },
   {
     id: 4,
-    title: "Tire Services",
-    price: 40,
-    image: "/images/tire-service.jpg",
+    title: "Tyre Services",
+    price: 4000,
+    image: "/tyre-service.png",
   },
   {
     id: 5,
     title: "Diagnostics",
-    price: 50,
-    image: "/images/diagnostics.jpg",
+    price: 5000,
+    image: "/Diagnostics.png",
   },
   {
     id: 6,
     title: "Body Work",
-    price: 200,
-    image: "/images/body-work.jpg",
+    price: 20000,
+    image: "/body-work.png",
   },
 ];
 
@@ -134,6 +135,7 @@ export default function ServicesPage() {
           </section>
         </div>
       </div>
+      <Footer />
     </main>
   );
 }

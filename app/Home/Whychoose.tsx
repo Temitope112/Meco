@@ -37,7 +37,7 @@ export default function WhyChoose() {
         {/* RIGHT */}
         <div className="relative overflow-hidden rounded-3xl">
           <Image
-            src="/BMW.png"
+            src="/cta-car.png"
             alt="Mechanic working"
             width={700}
             height={500}

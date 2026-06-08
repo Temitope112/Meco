@@ -1,5 +1,5 @@
 "use client";
-
+import Footer from "@/app/Component/layout/footer";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
@@ -311,6 +311,7 @@ export default function BookingCheckout() {
           </div>
         </div>
       </section>
+      <Footer />
     </main>
   );
 }

@@ -7,7 +7,7 @@ const services = [
     id: 1,
     title: "Oil Change",
     price: 30000,
-    image: "/images/oil-change.jpg",
+    image: "/oil-change.png",
     description:
       "Keep your engine running smoothly with professional oil and filter replacement using high-quality lubricants.",
     included: [
@@ -21,7 +21,7 @@ const services = [
     id: 2,
     title: "Engine Repair",
     price: 35000,
-    image: "/images/engine-repair.jpg",
+    image: "/engine-repair.png",
     description:
       "Our expert technicians use state-of-the-art diagnostic tools to identify and fix engine issues for smooth performance.",
     included: [
@@ -37,7 +37,7 @@ const services = [
     id: 3,
     title: "Brake Service",
     price: 80000,
-    image: "/images/brake-service.jpg",
+    image: "/brake-service.png",
     description:
       "Improve your vehicle safety with complete brake inspection, pad replacement, and brake system servicing.",
     included: [
@@ -53,12 +53,12 @@ const relatedServices = [
   {
     id: 1,
     title: "Oil Change",
-    image: "/images/oil-change.jpg",
+    image: "/oil-change.png",
   },
   {
     id: 3,
     title: "Brake Service",
-    image: "/images/brake-service.jpg",
+    image: "/brake-service.png",
   },
   {
     id: 6,
