@@ -1,71 +1,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CheckCircle } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
-const services = [
-  {
-    id: 1,
-    title: "Oil Change",
-    price: 30000,
-    image: "/oil-change.png",
-    description:
-      "Keep your engine running smoothly with professional oil and filter replacement using high-quality lubricants.",
-    included: [
-      "Oil Drain & Replacement",
-      "Oil Filter Change",
-      "Fluid Level Check",
-      "Engine Inspection",
-    ],
-  },
-  {
-    id: 2,
-    title: "Engine Repair",
-    price: 35000,
-    image: "/engine-repair.png",
-    description:
-      "Our expert technicians use state-of-the-art diagnostic tools to identify and fix engine issues for smooth performance.",
-    included: [
-      "Computerized Diagnostics",
-      "Engine Block Inspection",
-      "Cylinder Head Check",
-      "Timing Belt/Chain Check",
-      "Spark Plug Replacement",
-      "Oil & Filter Change",
-    ],
-  },
-  {
-    id: 3,
-    title: "Brake Service",
-    price: 80000,
-    image: "/brake-service.png",
-    description:
-      "Improve your vehicle safety with complete brake inspection, pad replacement, and brake system servicing.",
-    included: [
-      "Brake Pad Check",
-      "Rotor Inspection",
-      "Brake Fluid Check",
-      "Caliper Inspection",
-    ],
-  },
-];
-
-const relatedServices = [
-  {
-    id: 1,
-    title: "Oil Change",
-    image: "/oil-change.png",
-  },
-  {
-    id: 3,
-    title: "Brake Service",
-    image: "/brake-service.png",
-  },
-  {
-    id: 6,
-    title: "Transmission Repair",
-    image: "/images/transmission-repair.jpg",
-  },
-];
+type Service = {
+  id: number;
+  title: string;
+  price: number;
+  category: string;
+  description: string;
+  image_url: string;
+};
 
 export default async function ServiceDetailsPage({
   params,
@@ -74,9 +19,19 @@ export default async function ServiceDetailsPage({
 }) {
   const { id } = await params;
 
-  const service = services.find((item) => item.id === Number(id));
+  const { data: service, error } = await supabase
+    .from("services")
+    .select("*")
+    .eq("id", Number(id))
+    .single();
 
-  if (!service) {
+  const { data: relatedServices } = await supabase
+    .from("services")
+    .select("*")
+    .neq("id", Number(id))
+    .limit(3);
+
+  if (error || !service) {
     return (
       <main className="min-h-screen px-6 pt-32 text-center">
         <h1 className="text-3xl font-bold">Service not found</h1>
@@ -84,12 +39,15 @@ export default async function ServiceDetailsPage({
     );
   }
 
+  const imageSrc = service.image_url?.startsWith("/")
+    ? service.image_url
+    : "/oil-change.png";
+
   return (
     <main className="min-h-screen bg-white pt-20 text-black">
-      {/* Hero */}
       <section className="relative h-[360px] overflow-hidden bg-black">
         <Image
-          src={service.image}
+          src={imageSrc}
           alt={service.title}
           fill
           priority
@@ -101,23 +59,29 @@ export default async function ServiceDetailsPage({
         <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-center px-6">
           <h1 className="text-5xl font-bold text-white">{service.title}</h1>
           <p className="mt-4 max-w-md text-xl text-white">
-            Comprehensive diagnostics and expert repair for optimal performance.
+            {service.category || "Professional Automotive Service"}
           </p>
         </div>
       </section>
 
-      {/* Description */}
       <section className="mx-auto grid max-w-7xl gap-12 px-6 py-12 md:grid-cols-2">
         <div>
           <h2 className="mb-3 text-3xl font-bold">Service Description</h2>
-          <p className="max-w-lg leading-7">{service.description}</p>
+          <p className="max-w-lg leading-7">
+            {service.description || "Professional car service for your vehicle."}
+          </p>
         </div>
 
         <div>
           <h2 className="mb-4 text-3xl font-bold">What’s Included</h2>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            {service.included.map((item) => (
+            {[
+              "Professional Inspection",
+              "Expert Technician Support",
+              "Quality Service Delivery",
+              "Vehicle Performance Check",
+            ].map((item) => (
               <div key={item} className="flex items-center gap-2">
                 <CheckCircle size={16} />
                 <span>{item}</span>
@@ -132,16 +96,15 @@ export default async function ServiceDetailsPage({
               ₦{service.price.toLocaleString()}
             </h3>
 
-           <Link href={`/booking?serviceId=${service.id}`}>
-  <button className="rounded-lg bg-yellow-400 px-8 py-4 font-bold text-black">
-    Book Appointment
-  </button>
-</Link>
+            <Link href={`/booking?serviceId=${service.id}`}>
+              <button className="rounded-lg bg-yellow-400 px-8 py-4 font-bold text-black">
+                Book Appointment
+              </button>
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* FAQ */}
       <section className="bg-[#070d0e] px-6 py-12 text-white">
         <div className="mx-auto max-w-7xl">
           <h2 className="mb-6 text-3xl font-bold">
@@ -150,9 +113,9 @@ export default async function ServiceDetailsPage({
 
           <div className="space-y-4">
             {[
-              "How do I know if my engine needs repair?",
-              "How long does engine repair take?",
-              "Is there a warranty on engine repairs?",
+              `How do I know if I need ${service.title}?`,
+              `How long does ${service.title} take?`,
+              "Is there a warranty on this service?",
             ].map((question) => (
               <details
                 key={question}
@@ -163,7 +126,7 @@ export default async function ServiceDetailsPage({
                 </summary>
                 <p className="mt-3 text-sm text-white/60">
                   Our experts will inspect your vehicle and recommend the best
-                  repair solution based on the issue.
+                  service solution based on your vehicle condition.
                 </p>
               </details>
             ))}
@@ -171,32 +134,37 @@ export default async function ServiceDetailsPage({
         </div>
       </section>
 
-      {/* Related Services */}
       <section className="mx-auto max-w-7xl px-6 py-12">
         <h2 className="mb-6 text-3xl font-bold">Related Services</h2>
 
         <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
-          {relatedServices.map((item) => (
-            <Link
-              href={`/services/${item.id}`}
-              key={item.id}
-              className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
-            >
-              <div className="relative h-40">
-                <Image
-                  src={item.image}
-                  alt={item.title}
-                  fill
-                  className="object-cover"
-                />
-              </div>
+          {relatedServices?.map((item: Service) => {
+            const relatedImage = item.image_url?.startsWith("/")
+              ? item.image_url
+              : "/oil-change.png";
 
-              <div className="p-4">
-                <h3 className="font-bold">{item.title}</h3>
-                <p className="mt-1 text-sm">Learn More</p>
-              </div>
-            </Link>
-          ))}
+            return (
+              <Link
+                href={`/services/${item.id}`}
+                key={item.id}
+                className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
+              >
+                <div className="relative h-40">
+                  <Image
+                    src={relatedImage}
+                    alt={item.title}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+
+                <div className="p-4">
+                  <h3 className="font-bold">{item.title}</h3>
+                  <p className="mt-1 text-sm">Learn More</p>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </section>
     </main>

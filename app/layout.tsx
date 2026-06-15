@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Navbar from "./Component/layout/navbar";
+import NavbarWrapper from "./Component/layout/NavbarWrapper";
 
 export const metadata: Metadata = {
   title: "CarFix - Car Care Made Simple",
@@ -16,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen w-full flex flex-col">
-        <Navbar />
+       <NavbarWrapper />
         {children}
       </body>
     </html>

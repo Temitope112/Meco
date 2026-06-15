@@ -1,7 +1,8 @@
 "use client";
 
 import Footer from "@/app/Component/layout/footer";
-import { Suspense, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   ChevronLeft,
@@ -10,11 +11,11 @@ import {
   CalendarDays,
 } from "lucide-react";
 
-const services = [
-  { id: 1, title: "Oil Change", price: 30000 },
-  { id: 2, title: "Engine Repair", price: 35000 },
-  { id: 3, title: "Brake Service", price: 80000 },
-];
+type Service = {
+  id: number;
+  title: string;
+  price: number;
+};
 
 const timeSlots = [
   "9:00 AM",
@@ -25,16 +26,14 @@ const timeSlots = [
   "5:00 PM",
   "6:00 PM",
   "7:00 AM",
-  "8:00 PM",
+  "8:00 AM",
 ];
 
 function BookingCheckoutContent() {
   const searchParams = useSearchParams();
   const serviceId = searchParams.get("serviceId");
 
-  const selectedService = services.find(
-    (service) => service.id === Number(serviceId)
-  );
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
@@ -44,6 +43,27 @@ function BookingCheckoutContent() {
   const [customerName, setCustomerName] = useState("");
   const [vehicleModel, setVehicleModel] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const fetchService = async () => {
+      if (!serviceId) return;
+
+      const { data, error } = await supabase
+        .from("services")
+        .select("id, title, price")
+        .eq("id", Number(serviceId))
+        .single();
+
+      if (error) {
+        console.log(error);
+        return;
+      }
+
+      setSelectedService(data);
+    };
+
+    fetchService();
+  }, [serviceId]);
 
   const subtotal = selectedService ? selectedService.price : 0;
   const taxesAndFees = 2000;
@@ -98,39 +118,34 @@ function BookingCheckoutContent() {
       return;
     }
 
-    const bookingData = {
-      serviceId: selectedService.id,
-      serviceTitle: selectedService.title,
-      servicePrice: selectedService.price,
-      date: selectedDateText,
-      time: selectedTime,
-      customerName,
-      vehicleYear: yearInput,
-      vehicleModel,
-      subtotal,
-      taxesAndFees,
-      total,
-    };
-
     try {
       setIsSubmitting(true);
 
-      const res = await fetch("/api/bookings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(bookingData),
+      const { error } = await supabase.from("bookings").insert({
+        service_id: selectedService.id,
+        service_title: selectedService.title,
+        service_price: selectedService.price,
+        customer_name: customerName,
+        vehicle_year: yearInput,
+        vehicle_model: vehicleModel,
+        booking_date: selectedDateText,
+        booking_time: selectedTime,
+        subtotal,
+        taxes_and_fees: taxesAndFees,
+        total,
+        status: "pending",
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.message || "Something went wrong.");
+      if (error) {
+        alert(error.message);
         return;
       }
 
-      alert(data.message);
+      alert("Booking saved successfully!");
+
+      setCustomerName("");
+      setYearInput("");
+      setVehicleModel("");
     } catch (error) {
       alert("Unable to save booking. Please try again.");
       console.log(error);
@@ -193,9 +208,7 @@ function BookingCheckoutContent() {
 
                 <div className="grid grid-cols-7 gap-2 text-center text-sm">
                   {calendarDays.map((day, index) => {
-                    if (!day) {
-                      return <div key={index} className="h-8 w-8" />;
-                    }
+                    if (!day) return <div key={index} className="h-8 w-8" />;
 
                     const isSelected =
                       selectedDate?.getDate() === day &&

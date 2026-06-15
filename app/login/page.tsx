@@ -27,12 +27,17 @@ export default function LoginPage() {
       });
 
       if (error) {
-        alert("Incorrect email or password.");
-        return;
-      }
+  alert("Incorrect email or password.");
+  return;
+}
 
-      alert("Login successful!");
-      router.push("/dashboard");
+const adminEmail = "temitopeeniola295@gmail.com"; 
+
+if (email.toLowerCase() === adminEmail.toLowerCase()) {
+  router.push("/admin");
+} else {
+  router.push("/dashboard");
+}
     } catch (error) {
       console.log(error);
       alert("Something went wrong. Please try again.");
