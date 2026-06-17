@@ -34,6 +34,7 @@ function BookingCheckoutContent() {
   const serviceId = searchParams.get("serviceId");
 
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [customerEmail, setCustomerEmail] = useState("");
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
@@ -70,7 +71,6 @@ function BookingCheckoutContent() {
   const total = subtotal + taxesAndFees;
 
   const monthName = currentDate.toLocaleString("default", { month: "long" });
-
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
@@ -113,48 +113,71 @@ function BookingCheckoutContent() {
       return;
     }
 
-    if (!customerName || !yearInput || !vehicleModel) {
-      alert("Please fill in all vehicle details.");
+    if (!customerName || !customerEmail || !yearInput || !vehicleModel) {
+      alert("Please fill in all vehicle details and email.");
       return;
     }
 
     try {
       setIsSubmitting(true);
 
-      const { error } = await supabase.from("bookings").insert({
-        service_id: selectedService.id,
-        service_title: selectedService.title,
-        service_price: selectedService.price,
-        customer_name: customerName,
-        vehicle_year: yearInput,
-        vehicle_model: vehicleModel,
-        booking_date: selectedDateText,
-        booking_time: selectedTime,
-        subtotal,
-        taxes_and_fees: taxesAndFees,
-        total,
-        status: "pending",
-      });
+      const { data: booking, error } = await supabase
+        .from("bookings")
+        .insert({
+          service_id: selectedService.id,
+          service_title: selectedService.title,
+          service_price: selectedService.price,
+          customer_name: customerName,
+          customer_email: customerEmail,
+          vehicle_year: yearInput,
+          vehicle_model: vehicleModel,
+          booking_date: selectedDateText,
+          booking_time: selectedTime,
+          subtotal,
+          taxes_and_fees: taxesAndFees,
+          total,
+          status: "pending",
+          payment_status: "unpaid",
+        })
+        .select()
+        .single();
 
       if (error) {
         alert(error.message);
         return;
       }
 
-      alert("Booking saved successfully!");
+      const paymentRes = await fetch("/api/flutterwave/initialize", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: customerEmail,
+          amount: total,
+          bookingId: booking.id,
+          customerName,
+        }),
+      });
 
-      setCustomerName("");
-      setYearInput("");
-      setVehicleModel("");
+      const paymentData = await paymentRes.json();
+
+      if (!paymentRes.ok) {
+        alert(paymentData.message || "Unable to start payment.");
+        return;
+      }
+
+      window.location.href = paymentData.paymentLink;
     } catch (error) {
-      alert("Unable to save booking. Please try again.");
       console.log(error);
+      alert("Unable to process booking. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
+    <div>
     <main className="min-h-screen bg-[#080d0e] text-white px-6 pt-28 pb-10 md:px-20">
       <section className="max-w-7xl mx-auto">
         <h1 className="text-4xl md:text-5xl font-bold mb-12">
@@ -256,7 +279,7 @@ function BookingCheckoutContent() {
             <div className="mt-12 mb-6">
               <h2 className="text-2xl font-semibold mb-5">Vehicle Details</h2>
 
-              <div className="grid md:grid-cols-3 gap-4">
+              <div className="grid md:grid-cols-2 gap-4">
                 <input
                   value={yearInput}
                   onChange={(e) => setYearInput(e.target.value)}
@@ -268,6 +291,14 @@ function BookingCheckoutContent() {
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   placeholder="Your name"
+                  className="bg-white/5 border border-white/15 rounded-lg px-4 py-3 outline-none"
+                />
+
+                <input
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  placeholder="Your email"
+                  type="email"
                   className="bg-white/5 border border-white/15 rounded-lg px-4 py-3 outline-none"
                 />
 
@@ -316,7 +347,7 @@ function BookingCheckoutContent() {
                 disabled={!selectedService || isSubmitting}
                 className="w-full bg-yellow-400 text-black py-5 font-bold text-lg flex items-center justify-center gap-2 hover:bg-yellow-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? "Saving..." : "Confirm Booking"}
+                {isSubmitting ? "Processing..." : "Pay Now"}
                 <CheckCircle size={20} />
               </button>
             </div>
@@ -326,6 +357,7 @@ function BookingCheckoutContent() {
 
       <Footer />
     </main>
+    </div>
   );
 }
 
