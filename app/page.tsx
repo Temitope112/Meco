@@ -4,6 +4,8 @@
  import WhyChoose from "./Home/Whychoose";
  import Footer from "./Component/layout/footer";
 
+import Link from "next/link";
+
 export default function Home() {
   return (
     <div className="bg-[#0b0b0b] text-white min-h-screen font-sans">
@@ -119,22 +121,22 @@ export default function Home() {
         {[
           {
             title: "Oil Change",
-            image: "/images/service-1.jpg",
+            image: "/oil-change.png",
             price: "₦10,000",
           },
           {
             title: "Battery Replacement",
-            image: "/images/service-2.jpg",
+            image: "/battery.jpg",
             price: "₦25,000",
           },
           {
             title: "AC Repair",
-            image: "/images/service-3.jpg",
+            image: "/Ac-repair.jpg",
             price: "₦30,000",
           },
           {
             title: "Car Diagnostics",
-            image: "/images/service-4.jpg",
+            image: "/Diagnostics.png",
             price: "₦20,000",
           },
         ].map((service) => (
@@ -277,10 +279,18 @@ export default function Home() {
         <p className="mt-5 text-sm leading-7 text-white/75">
           Book service now and get back on the road worry-free.
         </p>
+        <Link href="/login">
+          <button className="mt-8 rounded-xl bg-yellow-400 px-6 py-3 text-sm font-semibold text-black transition hover:bg-yellow-300">
+            Book Now
+          </button>
+        </Link>
 
-        <button className="mt-8 rounded-xl bg-yellow-400 px-6 py-3 text-sm font-semibold text-black transition hover:bg-yellow-300">
-          Book Now
-        </button>
+        {/* <Link
+  href="/login"
+  className="mt-8 inline-block rounded-xl bg-yellow-400 px-6 py-3 text-sm font-semibold text-black transition hover:bg-yellow-300"
+>
+  Book Now
+</Link> */}
       </div>
     </div>
   </div>

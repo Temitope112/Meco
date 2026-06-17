@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   title: "CarFix - Car Care Made Simple",
   description:
     "Book trusted car services, anytime, anywhere. We bring quality service to your doorstep.",
+     icons: {
+    icon: "/favicon.jpg",
+  },
 };
 
 export default function RootLayout({

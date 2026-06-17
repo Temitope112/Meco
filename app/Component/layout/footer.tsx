@@ -3,13 +3,13 @@ import { Mail, Phone, MapPin } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="bg-[#05080a] px-4 py-14 text-white sm:px-6 lg:px-8">
+    <footer className="bg-[#05080a] px-4 py-14 text-white sm:px-6 lg:px-8 w-full">
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div>
             <Link href="/" className="text-2xl font-bold">
-              CarFix
+              Meco
             </Link>
 
             <p className="mt-4 max-w-xs text-sm leading-6 text-white/60">
@@ -32,10 +32,10 @@ export default function Footer() {
               <Link href="/#how-it-works" className="hover:text-yellow-400">
                 How it works
               </Link>
-              <Link href="/about" className="hover:text-yellow-400">
+              <Link href="/About" className="hover:text-yellow-400">
                 About us
               </Link>
-              <Link href="/contact" className="hover:text-yellow-400">
+              <Link href="/contact-us" className="hover:text-yellow-400">
                 Contact
               </Link>
             </div>
@@ -46,10 +46,18 @@ export default function Footer() {
             <h3 className="text-base font-semibold">Support</h3>
 
             <div className="mt-4 flex flex-col gap-3 text-sm text-white/60">
-              <p className="cursor-pointer hover:text-yellow-400">Help Center</p>
-              <p className="cursor-pointer hover:text-yellow-400">Terms & Conditions</p>
-              <p className="cursor-pointer hover:text-yellow-400">Privacy Policy</p>
-              <p className="cursor-pointer hover:text-yellow-400">Refund Policy</p>
+              <p className="cursor-pointer hover:text-yellow-400">
+                Help Center
+              </p>
+              <p className="cursor-pointer hover:text-yellow-400">
+                Terms & Conditions
+              </p>
+              <p className="cursor-pointer hover:text-yellow-400">
+                Privacy Policy
+              </p>
+              <p className="cursor-pointer hover:text-yellow-400">
+                Refund Policy
+              </p>
             </div>
           </div>
 
@@ -59,49 +67,48 @@ export default function Footer() {
 
             <div className="mt-4 flex flex-col gap-4 text-sm text-white/60">
               <div className="flex gap-3">
-                <Phone size={17} className="text-yellow-400 cursor-pointer" />
-                <span>+234 800 123 4567</span>
+                <Phone size={17} className="text-yellow-400" />
+                <span>+2348057977603</span>
               </div>
 
               <div className="flex gap-3">
-                <Mail size={17} className="text-yellow-400 cursor-pointer" />
-                <span>support@carfix.com</span>
+                <Mail size={17} className="text-yellow-400" />
+                <span>support@meco.com</span>
               </div>
 
               <div className="flex gap-3">
-                <MapPin size={17} className="text-yellow-400 cursor-pointer" />
+                <MapPin size={17} className="text-yellow-400" />
                 <span>Ogbomosho, Nigeria</span>
+              </div>
+            </div>
+
+            {/* Newsletter */}
+            <div className="mt-8">
+              <h3 className="text-base font-semibold text-white">
+                Newsletter
+              </h3>
+
+              <p className="mt-3 text-sm text-white/60">
+                Stay updated with our latest offers and tips.
+              </p>
+
+              <div className="mt-4 flex max-w-[260px] flex-col gap-3">
+                <input
+                  type="email"
+                  placeholder="Your email"
+                  className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-white/40"
+                />
+
+                <button className="rounded-xl bg-yellow-400 px-5 py-3 text-sm font-medium text-black transition hover:bg-yellow-300">
+                  Subscribe
+                </button>
               </div>
             </div>
           </div>
         </div>
 
-        
-           {/* NEWSLETTER */}
-<div>
-  <h3 className="mt-6 text-base font-semibold text-white">
-    Newsletter
-  </h3>
-
-  <p className="mt-4 text-sm leading-6 text-white/60">
-    Stay updated with our latest offers and tips.
-  </p>
-
-  <div className="mt-5 space-y-4">
-    <input
-      type="email"
-      placeholder="Your email"
-      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-white/40"
-    />
-
-    <button className="w-full rounded-xl bg-yellow-400 px-5 py-3 text-sm font-medium text-black transition hover:bg-yellow-300 cursor-pointer">
-      Subscribe
-    </button>
-  </div>
-</div>
-
         <div className="mt-12 border-t border-white/10 pt-6 text-center text-sm text-white/40">
-          © 2026 CarFix. All rights reserved.
+          © 2026 Meco. All rights reserved.
         </div>
       </div>
     </footer>

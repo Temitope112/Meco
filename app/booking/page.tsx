@@ -3,7 +3,7 @@
 import Footer from "@/app/Component/layout/footer";
 import { supabase } from "@/lib/supabase";
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ChevronLeft,
   ChevronRight,
@@ -30,20 +30,41 @@ const timeSlots = [
 ];
 
 function BookingCheckoutContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const serviceId = searchParams.get("serviceId");
 
+  const [checkingUser, setCheckingUser] = useState(true);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+
   const [customerEmail, setCustomerEmail] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [yearInput, setYearInput] = useState("");
+  const [vehicleModel, setVehicleModel] = useState("");
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [selectedTime, setSelectedTime] = useState("9:00 AM");
-
-  const [yearInput, setYearInput] = useState("");
-  const [customerName, setCustomerName] = useState("");
-  const [vehicleModel, setVehicleModel] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const checkLoggedInUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        alert("Please login or create an account before booking a service.");
+        router.push("/login");
+        return;
+      }
+
+      setCustomerEmail(user.email || "");
+      setCheckingUser(false);
+    };
+
+    checkLoggedInUser();
+  }, [router]);
 
   useEffect(() => {
     const fetchService = async () => {
@@ -176,8 +197,15 @@ function BookingCheckoutContent() {
     }
   };
 
+  if (checkingUser) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#080d0e] text-white">
+        <p>Checking login status...</p>
+      </main>
+    );
+  }
+
   return (
-    <div>
     <main className="min-h-screen bg-[#080d0e] text-white px-6 pt-28 pb-10 md:px-20">
       <section className="max-w-7xl mx-auto">
         <h1 className="text-4xl md:text-5xl font-bold mb-12">
@@ -357,7 +385,6 @@ function BookingCheckoutContent() {
 
       <Footer />
     </main>
-    </div>
   );
 }
 
