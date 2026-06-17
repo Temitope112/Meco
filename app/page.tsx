@@ -280,7 +280,7 @@ export default function Home() {
           Book service now and get back on the road worry-free.
         </p>
         <Link href="/login">
-          <button className="mt-8 rounded-xl bg-yellow-400 px-6 py-3 text-sm font-semibold text-black transition hover:bg-yellow-300">
+          <button className="mt-8 rounded-xl bg-yellow-400 px-6 py-3 text-sm font-semibold text-black transition hover:bg-yellow-300 cursor-pointer">
             Book Now
           </button>
         </Link>

@@ -3,7 +3,7 @@ import "./globals.css";
 import NavbarWrapper from "./Component/layout/NavbarWrapper";
 
 export const metadata: Metadata = {
-  title: "CarFix - Car Care Made Simple",
+  title: "Meco - Car Care Made Simple",
   description:
     "Book trusted car services, anytime, anywhere. We bring quality service to your doorstep.",
      icons: {
