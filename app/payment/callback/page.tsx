@@ -76,10 +76,10 @@ function PaymentCallbackContent() {
             <p className="mt-3 text-white/60">{message}</p>
 
             <Link
-              href="/services"
+              href="/dashboard/bookings"
               className="mt-8 inline-block rounded-lg bg-yellow-400 px-6 py-3 font-bold text-black"
             >
-              Back to Services
+              View My Bookings
             </Link>
           </div>
         ) : (
