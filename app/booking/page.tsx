@@ -17,6 +17,13 @@ type Service = {
   price: number;
 };
 
+type CartItem = {
+  id: number;
+  title: string;
+  price: number;
+  quantity: number;
+};
+
 const timeSlots = [
   "9:00 AM",
   "1:00 PM",
@@ -32,10 +39,13 @@ const timeSlots = [
 function BookingCheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
   const serviceId = searchParams.get("serviceId");
+  const isCartBooking = searchParams.get("cart") === "true";
 
   const [checkingUser, setCheckingUser] = useState(true);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerName, setCustomerName] = useState("");
@@ -68,6 +78,7 @@ function BookingCheckoutContent() {
 
   useEffect(() => {
     const fetchService = async () => {
+      if (isCartBooking) return;
       if (!serviceId) return;
 
       const { data, error } = await supabase
@@ -85,10 +96,25 @@ function BookingCheckoutContent() {
     };
 
     fetchService();
-  }, [serviceId]);
+  }, [serviceId, isCartBooking]);
 
-  const subtotal = selectedService ? selectedService.price : 0;
-  const taxesAndFees = 2000;
+  useEffect(() => {
+    if (!isCartBooking) return;
+
+    const savedCart = localStorage.getItem("meco_cart");
+
+    if (savedCart) {
+      setCartItems(JSON.parse(savedCart));
+    }
+  }, [isCartBooking]);
+
+  const subtotal = isCartBooking
+    ? cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    : selectedService
+    ? selectedService.price
+    : 0;
+
+  const taxesAndFees = subtotal > 0 ? 2000 : 0;
   const total = subtotal + taxesAndFees;
 
   const monthName = currentDate.toLocaleString("default", { month: "long" });
@@ -129,8 +155,14 @@ function BookingCheckoutContent() {
     : "No date selected";
 
   const handleConfirmBooking = async () => {
-    if (!selectedService) {
+    if (!isCartBooking && !selectedService) {
       alert("Please select a service first.");
+      return;
+    }
+
+    if (isCartBooking && cartItems.length === 0) {
+      alert("Your cart is empty. Please add services first.");
+      router.push("/dashboard/services");
       return;
     }
 
@@ -142,12 +174,19 @@ function BookingCheckoutContent() {
     try {
       setIsSubmitting(true);
 
+      const serviceTitle = isCartBooking
+        ? cartItems.map((item) => `${item.title} x${item.quantity}`).join(", ")
+        : selectedService?.title;
+
+      const serviceIdValue = isCartBooking ? null : selectedService?.id;
+      const servicePriceValue = subtotal;
+
       const { data: booking, error } = await supabase
         .from("bookings")
         .insert({
-          service_id: selectedService.id,
-          service_title: selectedService.title,
-          service_price: selectedService.price,
+          service_id: serviceIdValue,
+          service_title: serviceTitle,
+          service_price: servicePriceValue,
           customer_name: customerName,
           customer_email: customerEmail,
           vehicle_year: yearInput,
@@ -188,6 +227,10 @@ function BookingCheckoutContent() {
         return;
       }
 
+      if (isCartBooking) {
+        localStorage.removeItem("meco_cart");
+      }
+
       window.location.href = paymentData.paymentLink;
     } catch (error) {
       console.log(error);
@@ -206,22 +249,40 @@ function BookingCheckoutContent() {
   }
 
   return (
-    <main className="min-h-screen bg-[#080d0e] text-white px-6 pt-28 pb-10 md:px-20">
-      <section className="max-w-7xl mx-auto">
-        <h1 className="text-4xl md:text-5xl font-bold mb-12">
+    <main className="min-h-screen bg-[#080d0e] px-6 pt-28 pb-10 text-white md:px-20">
+      <section className="mx-auto max-w-7xl">
+        <h1 className="mb-12 text-4xl font-bold md:text-5xl">
           <span className="text-yellow-400">Booking</span> Checkout
         </h1>
 
-        <div className="grid lg:grid-cols-2 gap-16">
+        <div className="grid gap-16 lg:grid-cols-2">
           <div>
             <div className="mb-10">
-              <div className="flex justify-between border-b border-white/15 pb-3 mb-2">
+              <div className="mb-2 flex justify-between border-b border-white/15 pb-3">
                 <h2 className="text-xl font-semibold">
                   Your Selected Service
                 </h2>
               </div>
 
-              {selectedService ? (
+              {isCartBooking ? (
+                cartItems.length > 0 ? (
+                  cartItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex justify-between border-b border-white/15 py-4 text-lg"
+                    >
+                      <span>
+                        {item.title} x {item.quantity}
+                      </span>
+                      <span>
+                        ₦{(item.price * item.quantity).toLocaleString()}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="py-4 text-white/60">No service in cart</p>
+                )
+              ) : selectedService ? (
                 <div className="flex justify-between border-b border-white/15 py-4 text-lg">
                   <span>{selectedService.title}</span>
                   <span>₦{selectedService.price.toLocaleString()}</span>
@@ -231,13 +292,13 @@ function BookingCheckoutContent() {
               )}
             </div>
 
-            <h2 className="text-2xl font-semibold mb-5">
+            <h2 className="mb-5 text-2xl font-semibold">
               Schedule Your Appointment
             </h2>
 
-            <div className="flex flex-col md:flex-row gap-8">
-              <div className="w-full md:w-[280px] rounded-xl border border-white/15 bg-white/5 p-4">
-                <div className="flex justify-between items-center mb-5">
+            <div className="flex flex-col gap-8 md:flex-row">
+              <div className="w-full rounded-xl border border-white/15 bg-white/5 p-4 md:w-[280px]">
+                <div className="mb-5 flex items-center justify-between">
                   <button onClick={previousMonth}>
                     <ChevronLeft size={18} />
                   </button>
@@ -251,7 +312,7 @@ function BookingCheckoutContent() {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-7 text-center text-sm text-white/50 mb-3 cursor-default">
+                <div className="mb-3 grid cursor-default grid-cols-7 text-center text-sm text-white/50">
                   {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
                     <span key={day}>{day}</span>
                   ))}
@@ -270,9 +331,9 @@ function BookingCheckoutContent() {
                       <button
                         key={index}
                         onClick={() => handleDateSelect(day)}
-                        className={`h-8 w-8 rounded-full mx-auto transition ${
+                        className={`mx-auto h-8 w-8 rounded-full transition ${
                           isSelected
-                            ? "bg-yellow-400 text-black font-bold"
+                            ? "bg-yellow-400 font-bold text-black"
                             : "text-white hover:bg-white/10"
                         }`}
                       >
@@ -284,7 +345,7 @@ function BookingCheckoutContent() {
               </div>
 
               <div>
-                <h3 className="text-lg mb-4">Time/slot</h3>
+                <h3 className="mb-4 text-lg">Time/slot</h3>
 
                 <div className="grid grid-cols-3 gap-3">
                   {timeSlots.map((time) => (
@@ -293,7 +354,7 @@ function BookingCheckoutContent() {
                       onClick={() => setSelectedTime(time)}
                       className={`rounded-lg border px-4 py-2 text-sm transition ${
                         selectedTime === time
-                          ? "border-yellow-400 text-yellow-400 bg-yellow-400/10"
+                          ? "border-yellow-400 bg-yellow-400/10 text-yellow-400"
                           : "border-white/15 bg-white/5 hover:border-yellow-400"
                       }`}
                     >
@@ -305,21 +366,21 @@ function BookingCheckoutContent() {
             </div>
 
             <div className="mt-12 mb-6">
-              <h2 className="text-2xl font-semibold mb-5">Vehicle Details</h2>
+              <h2 className="mb-5 text-2xl font-semibold">Vehicle Details</h2>
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 <input
                   value={yearInput}
                   onChange={(e) => setYearInput(e.target.value)}
                   placeholder="Year"
-                  className="bg-white/5 border border-white/15 rounded-lg px-4 py-3 outline-none"
+                  className="rounded-lg border border-white/15 bg-white/5 px-4 py-3 outline-none"
                 />
 
                 <input
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   placeholder="Your name"
-                  className="bg-white/5 border border-white/15 rounded-lg px-4 py-3 outline-none"
+                  className="rounded-lg border border-white/15 bg-white/5 px-4 py-3 outline-none"
                 />
 
                 <input
@@ -327,23 +388,23 @@ function BookingCheckoutContent() {
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   placeholder="Your email"
                   type="email"
-                  className="bg-white/5 border border-white/15 rounded-lg px-4 py-3 outline-none"
+                  className="rounded-lg border border-white/15 bg-white/5 px-4 py-3 outline-none"
                 />
 
                 <input
                   value={vehicleModel}
                   onChange={(e) => setVehicleModel(e.target.value)}
                   placeholder="Your Model"
-                  className="bg-white/5 border border-white/15 rounded-lg px-4 py-3 outline-none"
+                  className="rounded-lg border border-white/15 bg-white/5 px-4 py-3 outline-none"
                 />
               </div>
             </div>
           </div>
 
           <div>
-            <div className="rounded-xl border border-white/15 bg-white/5 overflow-hidden max-w-md ml-auto">
+            <div className="ml-auto max-w-md overflow-hidden rounded-xl border border-white/15 bg-white/5">
               <div className="p-6">
-                <h2 className="text-2xl font-semibold mb-6">
+                <h2 className="mb-6 text-2xl font-semibold">
                   Payment Summary
                 </h2>
 
@@ -364,7 +425,7 @@ function BookingCheckoutContent() {
                   <span>₦{total.toLocaleString()}</span>
                 </div>
 
-                <div className="mt-4 text-sm text-white/60 flex items-center gap-2">
+                <div className="mt-4 flex items-center gap-2 text-sm text-white/60">
                   <CalendarDays size={16} />
                   {selectedDateText} at {selectedTime}
                 </div>
@@ -372,8 +433,8 @@ function BookingCheckoutContent() {
 
               <button
                 onClick={handleConfirmBooking}
-                disabled={!selectedService || isSubmitting}
-                className="w-full bg-yellow-400 text-black py-5 font-bold text-lg flex items-center justify-center gap-2 hover:bg-yellow-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={subtotal === 0 || isSubmitting}
+                className="flex w-full items-center justify-center gap-2 bg-yellow-400 py-5 text-lg font-bold text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSubmitting ? "Processing..." : "Pay Now"}
                 <CheckCircle size={20} />
