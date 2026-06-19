@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 
 const navLinks = [
   { name: "Home", href: "/" },
@@ -15,6 +17,8 @@ const navLinks = [
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [checkingUser, setCheckingUser] = useState(true);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -26,6 +30,48 @@ export default function Navbar() {
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
+
+        if (error) {
+          setUser(null);
+          return;
+        }
+
+        setUser(user);
+      } catch (error) {
+        console.log("Navbar auth check failed:", error);
+        setUser(null);
+      } finally {
+        setCheckingUser(false);
+      }
+    };
+
+    getUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setCheckingUser(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setOpen(false);
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 w-full">
@@ -42,11 +88,11 @@ export default function Navbar() {
               width={120}
               height={40}
               priority
-              className="h-auto w-auto max-h-10"
+              className="h-auto max-h-10 w-auto"
             />
           </Link>
 
-          <div className="hidden lg:flex items-center gap-8">
+          <div className="hidden items-center gap-8 lg:flex">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
@@ -60,29 +106,56 @@ export default function Navbar() {
             ))}
           </div>
 
-          <div className="hidden lg:flex items-center gap-3">
-            <Link
-              href="/login"
-              className={`rounded-lg border px-5 py-2 text-sm transition cursor-pointer ${
-                scrolled
-                  ? "border-zinc-700 text-white hover:border-zinc-500"
-                  : "border-zinc-300 text-black hover:border-zinc-500"
-              }`}
-            >
-              Log In
-            </Link>
+          <div className="hidden items-center gap-3 lg:flex">
+            {!checkingUser &&
+              (user ? (
+                <>
+                  <Link
+                    href="/dashboard"
+                    className="rounded-lg bg-orange-500 px-5 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
+                  >
+                    Dashboard
+                  </Link>
 
-            <Link
-              href="/sign-up"
-              className="rounded-lg bg-orange-500 px-5 py-2 text-sm font-medium text-white transition hover:bg-orange-600 cursor-pointer"
-            >
-              Sign Up
-            </Link>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className={`rounded-lg border px-5 py-2 text-sm transition ${
+                      scrolled
+                        ? "border-zinc-700 text-white hover:border-zinc-500"
+                        : "border-zinc-300 text-black hover:border-zinc-500"
+                    }`}
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className={`rounded-lg border px-5 py-2 text-sm transition ${
+                      scrolled
+                        ? "border-zinc-700 text-white hover:border-zinc-500"
+                        : "border-zinc-300 text-black hover:border-zinc-500"
+                    }`}
+                  >
+                    Log In
+                  </Link>
+
+                  <Link
+                    href="/sign-up"
+                    className="rounded-lg bg-orange-500 px-5 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              ))}
           </div>
 
           <button
+            type="button"
             onClick={() => setOpen(!open)}
-            className={`lg:hidden cursor-pointer ${
+            className={`cursor-pointer lg:hidden ${
               scrolled ? "text-white" : "text-black"
             }`}
           >
@@ -108,25 +181,52 @@ export default function Navbar() {
                 </Link>
               ))}
 
-              <Link
-                href="/login"
-                onClick={() => setOpen(false)}
-                className={`rounded-lg border py-2 text-center ${
-                  scrolled
-                    ? "border-zinc-700 text-white"
-                    : "border-zinc-300 text-black"
-                }`}
-              >
-                Log In
-              </Link>
+              {!checkingUser &&
+                (user ? (
+                  <>
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setOpen(false)}
+                      className="rounded-lg bg-orange-500 py-2 text-center text-white"
+                    >
+                      Dashboard
+                    </Link>
 
-              <Link
-                href="/sign-up"
-                onClick={() => setOpen(false)}
-                className="rounded-lg bg-orange-500 py-2 text-center text-white"
-              >
-                Sign Up
-              </Link>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className={`rounded-lg border py-2 text-center ${
+                        scrolled
+                          ? "border-zinc-700 text-white"
+                          : "border-zinc-300 text-black"
+                      }`}
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      onClick={() => setOpen(false)}
+                      className={`rounded-lg border py-2 text-center ${
+                        scrolled
+                          ? "border-zinc-700 text-white"
+                          : "border-zinc-300 text-black"
+                      }`}
+                    >
+                      Log In
+                    </Link>
+
+                    <Link
+                      href="/sign-up"
+                      onClick={() => setOpen(false)}
+                      className="rounded-lg bg-orange-500 py-2 text-center text-white"
+                    >
+                      Sign Up
+                    </Link>
+                  </>
+                ))}
             </div>
           </div>
         )}

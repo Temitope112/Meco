@@ -181,25 +181,27 @@ function BookingCheckoutContent() {
       const servicePriceValue = subtotal;
 
       const { data: booking, error } = await supabase
-        .from("bookings")
-        .insert({
-          service_id: serviceIdValue,
-          service_title: serviceTitle,
-          service_price: servicePriceValue,
-          customer_name: customerName,
-          customer_email: customerEmail,
-          vehicle_year: yearInput,
-          vehicle_model: vehicleModel,
-          booking_date: selectedDateText,
-          booking_time: selectedTime,
-          subtotal,
-          taxes_and_fees: taxesAndFees,
-          total,
-          status: "pending",
-          payment_status: "unpaid",
-        })
-        .select()
-        .single();
+  .from("bookings")
+  .insert({
+    service_id: serviceIdValue,
+    service_title: serviceTitle,
+    service_price: servicePriceValue,
+    customer_name: customerName,
+    customer_email: customerEmail,
+    vehicle_year: yearInput,
+    vehicle_model: vehicleModel,
+    address,
+    booking_date: selectedDateText,
+    booking_time: selectedTime,
+    subtotal,
+    taxes_and_fees: taxesAndFees,
+    total,
+    status: "pending",
+    payment_status: "unpaid",
+  })
+  .select()
+  .single();
+        
 
       if (error) {
         alert(error.message);
