@@ -1,12 +1,53 @@
+"use client";
+
 import Link from "next/link";
 import { Mail, Phone, MapPin } from "lucide-react";
+import { useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 export default function Footer() {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const subscribe = async () => {
+    if (!email.trim()) {
+      alert("Please enter your email");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const { error } = await supabase
+        .from("newsletter_subscribers")
+        .insert({
+          email: email.trim().toLowerCase(),
+        });
+
+      if (error) {
+        if (error.message.toLowerCase().includes("duplicate")) {
+          alert("Email already subscribed");
+          return;
+        }
+
+        alert(error.message);
+        return;
+      }
+
+      alert("Successfully subscribed!");
+      setEmail("");
+    } catch (error) {
+      console.log(error);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <footer className="bg-[#05080a] px-4 py-14 text-white sm:px-6 lg:px-8 w-full">
+    <footer className="w-full bg-[#05080a] px-4 py-14 text-white sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
-          {/* Brand */}
           <div>
             <Link href="/" className="text-2xl font-bold">
               Meco
@@ -18,7 +59,6 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Quick Links */}
           <div>
             <h3 className="text-base font-semibold">Quick Links</h3>
 
@@ -41,7 +81,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Support */}
           <div>
             <h3 className="text-base font-semibold">Support</h3>
 
@@ -61,7 +100,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Contact */}
           <div>
             <h3 className="text-base font-semibold">Contact</h3>
 
@@ -82,7 +120,6 @@ export default function Footer() {
               </div>
             </div>
 
-            {/* Newsletter */}
             <div className="mt-8">
               <h3 className="text-base font-semibold text-white">
                 Newsletter
@@ -95,12 +132,19 @@ export default function Footer() {
               <div className="mt-4 flex max-w-[260px] flex-col gap-3">
                 <input
                   type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="Your email"
                   className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-white/40"
                 />
 
-                <button className="rounded-xl bg-yellow-400 px-5 py-3 text-sm font-medium text-black transition hover:bg-yellow-300">
-                  Subscribe
+                <button
+                  type="button"
+                  onClick={subscribe}
+                  disabled={loading}
+                  className="rounded-xl bg-yellow-400 px-5 py-3 text-sm font-medium text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+                >
+                  {loading ? "Subscribing..." : "Subscribe"}
                 </button>
               </div>
             </div>
