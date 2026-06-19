@@ -10,8 +10,8 @@ type Booking = {
   total: number;
   booking_date: string;
   booking_time: string;
-  payment_status: string;
-  status: string;
+  payment_status: string | null;
+  status: string | null;
   customer_email: string;
   customer_name: string;
 };
@@ -22,6 +22,8 @@ export default function DashboardBookingsPage() {
   const [processingId, setProcessingId] = useState<number | null>(null);
 
   const fetchBookings = async () => {
+    setLoading(true);
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -93,7 +95,7 @@ export default function DashboardBookingsPage() {
       .from("bookings")
       .delete()
       .eq("id", id)
-      .eq("payment_status", "unpaid");
+      .or("payment_status.eq.unpaid,payment_status.eq.pending,payment_status.is.null");
 
     if (error) {
       alert(error.message);
@@ -109,7 +111,7 @@ export default function DashboardBookingsPage() {
         <h1 className="text-3xl font-bold">My Bookings</h1>
 
         <p className="mt-2 text-white/60">
-          View your bookings, complete unpaid payments, or remove pending
+          View your bookings, complete pending payments, or delete unpaid
           bookings.
         </p>
       </div>
@@ -125,7 +127,10 @@ export default function DashboardBookingsPage() {
       ) : (
         <div className="space-y-5">
           {bookings.map((booking) => {
-            const isUnpaid = booking.payment_status === "unpaid";
+            const isUnpaid =
+              booking.payment_status === "unpaid" ||
+              booking.payment_status === "pending" ||
+              !booking.payment_status;
 
             return (
               <div
@@ -160,7 +165,7 @@ export default function DashboardBookingsPage() {
 
                   <div className="flex flex-col gap-3 lg:items-end">
                     <p className="text-xl font-bold text-yellow-400">
-                      ₦{booking.total.toLocaleString()}
+                      ₦{booking.total?.toLocaleString()}
                     </p>
 
                     <div className="flex flex-wrap gap-3">
@@ -171,7 +176,7 @@ export default function DashboardBookingsPage() {
                             : "bg-yellow-500/20 text-yellow-400"
                         }`}
                       >
-                        Payment: {booking.payment_status}
+                        Payment: {booking.payment_status || "unpaid"}
                       </span>
 
                       <span
@@ -183,7 +188,7 @@ export default function DashboardBookingsPage() {
                             : "bg-yellow-500/20 text-yellow-400"
                         }`}
                       >
-                        {booking.status}
+                        {booking.status || "pending"}
                       </span>
                     </div>
 
