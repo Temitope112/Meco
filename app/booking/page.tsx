@@ -51,7 +51,7 @@ function BookingCheckoutContent() {
   const [customerName, setCustomerName] = useState("");
   const [yearInput, setYearInput] = useState("");
   const [vehicleModel, setVehicleModel] = useState("");
-
+  const [address, setAddress] = useState("");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [selectedTime, setSelectedTime] = useState("9:00 AM");
@@ -166,11 +166,10 @@ function BookingCheckoutContent() {
       return;
     }
 
-    if (!customerName || !customerEmail || !yearInput || !vehicleModel) {
-      alert("Please fill in all vehicle details and email.");
-      return;
-    }
-
+   if (!customerName || !customerEmail || !yearInput || !vehicleModel || !address) {
+  alert("Please fill in all vehicle details, email and address.");
+  return;
+}
     try {
       setIsSubmitting(true);
 
@@ -397,6 +396,12 @@ function BookingCheckoutContent() {
                   placeholder="Your Model"
                   className="rounded-lg border border-white/15 bg-white/5 px-4 py-3 outline-none"
                 />
+                <input
+  value={address}
+  onChange={(e) => setAddress(e.target.value)}
+  placeholder="Your address"
+  className="rounded-lg border border-white/15 bg-white/5 px-4 py-3 outline-none md:col-span-2"
+/>
               </div>
             </div>
           </div>
