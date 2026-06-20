@@ -17,6 +17,8 @@ import {
   Headphones,
   Users,
   Star,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 export default function SignUpPage() {
@@ -28,6 +30,10 @@ export default function SignUpPage() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -78,7 +84,7 @@ export default function SignUpPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#050708] text-white px-6 pt-28 pb-10">
+    <main className="min-h-screen bg-[#050708] px-6 pt-28 pb-10 text-white">
       <section className="mx-auto grid max-w-7xl overflow-hidden rounded-3xl border border-white/10 bg-black/40 lg:grid-cols-2">
         <div className="p-8 md:p-12">
           <div className="mb-10">
@@ -93,6 +99,7 @@ export default function SignUpPage() {
             <h1 className="text-4xl font-bold">
               <span className="text-yellow-400">Create</span> Account
             </h1>
+
             <p className="mt-3 text-white/60">
               Join MECO and experience premium car care
             </p>
@@ -124,7 +131,7 @@ export default function SignUpPage() {
             >
               <Briefcase className="mb-3 text-white/70" />
               <h3 className="font-semibold cursor-pointer">Business</h3>
-              <p className="text-sm text-white/60 cursor-pointer">Manage services</p>
+              <p className="text-sm text-white/60">Manage services</p>
             </button>
           </div>
 
@@ -154,22 +161,24 @@ export default function SignUpPage() {
               onChange={setPhone}
             />
 
-            <Input
+            <PasswordInput
               icon={<Lock size={18} />}
               label="Password"
               placeholder="Create a password"
-              type="password"
               value={password}
               onChange={setPassword}
+              show={showPassword}
+              toggle={() => setShowPassword(!showPassword)}
             />
 
-            <Input
+            <PasswordInput
               icon={<Lock size={18} />}
               label="Confirm Password"
               placeholder="Confirm your password"
-              type="password"
               value={confirmPassword}
               onChange={setConfirmPassword}
+              show={showConfirmPassword}
+              toggle={() => setShowConfirmPassword(!showConfirmPassword)}
             />
           </div>
 
@@ -192,7 +201,7 @@ export default function SignUpPage() {
               type="checkbox"
               checked={agreed}
               onChange={(e) => setAgreed(e.target.checked)}
-              className="h-5 w-5 rounded"
+              className="h-5 w-5 rounded accent-yellow-400"
             />
             I agree to the{" "}
             <span className="text-yellow-400">Terms of Service</span> and{" "}
@@ -203,7 +212,7 @@ export default function SignUpPage() {
             type="button"
             onClick={handleSignUp}
             disabled={loading}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 py-4 font-bold text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 py-4 font-bold text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
           >
             <User size={20} />
             {loading ? "Creating Account..." : "Create Account"}
@@ -215,11 +224,11 @@ export default function SignUpPage() {
             <span className="h-px flex-1 bg-white/10" />
           </div>
 
-          <button className="w-full rounded-xl bg-white py-4 font-semibold text-black">
+          <button className="w-full rounded-xl bg-white py-4 font-semibold text-black transition hover:bg-gray-200 cursor-pointer">
             Sign up with Google
           </button>
 
-          <button className="mt-4 w-full rounded-xl border border-white/10 py-4 font-semibold">
+          <button className="mt-4 w-full rounded-xl border border-white/10 py-4 font-semibold transition hover:bg-white/10 cursor-pointer">
             Sign up with Apple
           </button>
 
@@ -262,6 +271,7 @@ export default function SignUpPage() {
             <div className="mt-10 flex gap-6 rounded-2xl border border-white/10 bg-white/5 p-6">
               <div className="flex items-center gap-3">
                 <Users className="text-yellow-400" />
+
                 <div>
                   <h3 className="text-2xl font-bold">10K+</h3>
                   <p className="text-sm text-white/60">Happy Customers</p>
@@ -270,6 +280,7 @@ export default function SignUpPage() {
 
               <div className="flex items-center gap-3">
                 <Star className="text-yellow-400" />
+
                 <div>
                   <h3 className="text-2xl font-bold">4.9/5</h3>
                   <p className="text-sm text-white/60">Customer Rating</p>
@@ -301,8 +312,10 @@ function Input({
   return (
     <label className="block">
       <span className="mb-2 block text-sm">{label}</span>
+
       <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-4">
         <span className="text-white/60">{icon}</span>
+
         <input
           type={type}
           value={value}
@@ -315,12 +328,57 @@ function Input({
   );
 }
 
+function PasswordInput({
+  label,
+  placeholder,
+  icon,
+  value,
+  onChange,
+  show,
+  toggle,
+}: {
+  label: string;
+  placeholder: string;
+  icon: React.ReactNode;
+  value: string;
+  onChange: (value: string) => void;
+  show: boolean;
+  toggle: () => void;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-sm">{label}</span>
+
+      <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-4">
+        <span className="text-white/60">{icon}</span>
+
+        <input
+          type={show ? "text" : "password"}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full bg-transparent text-sm outline-none placeholder:text-white/40"
+        />
+
+        <button
+          type="button"
+          onClick={toggle}
+          className="text-white/50 transition hover:text-white"
+        >
+          {show ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      </div>
+    </label>
+  );
+}
+
 function Feature({ icon, title }: { icon: React.ReactNode; title: string }) {
   return (
     <div className="flex items-center gap-4">
       <div className="rounded-full border border-yellow-400 p-3 text-yellow-400">
         {icon}
       </div>
+
       <p className="font-semibold">{title}</p>
     </div>
   );

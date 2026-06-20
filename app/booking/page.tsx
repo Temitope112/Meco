@@ -13,12 +13,14 @@ import {
 
 type Service = {
   id: number;
+  service_code: string | null;
   title: string;
   price: number;
 };
 
 type CartItem = {
   id: number;
+  service_code?: string | null;
   title: string;
   price: number;
   quantity: number;
@@ -52,6 +54,7 @@ function BookingCheckoutContent() {
   const [yearInput, setYearInput] = useState("");
   const [vehicleModel, setVehicleModel] = useState("");
   const [address, setAddress] = useState("");
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [selectedTime, setSelectedTime] = useState("9:00 AM");
@@ -83,7 +86,7 @@ function BookingCheckoutContent() {
 
       const { data, error } = await supabase
         .from("services")
-        .select("id, title, price")
+        .select("id, service_code, title, price")
         .eq("id", Number(serviceId))
         .single();
 
@@ -166,42 +169,50 @@ function BookingCheckoutContent() {
       return;
     }
 
-   if (!customerName || !customerEmail || !yearInput || !vehicleModel || !address) {
-  alert("Please fill in all vehicle details, email and address.");
-  return;
-}
+    if (!customerName || !customerEmail || !yearInput || !vehicleModel || !address) {
+      alert("Please fill in all vehicle details, email and address.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
       const serviceTitle = isCartBooking
-        ? cartItems.map((item) => `${item.title} x${item.quantity}`).join(", ")
+        ? cartItems
+            .map((item) =>
+              item.service_code
+                ? `${item.service_code} - ${item.title} x${item.quantity}`
+                : `${item.title} x${item.quantity}`
+            )
+            .join(", ")
+        : selectedService?.service_code
+        ? `${selectedService.service_code} - ${selectedService.title}`
         : selectedService?.title;
 
       const serviceIdValue = isCartBooking ? null : selectedService?.id;
       const servicePriceValue = subtotal;
 
       const { data: booking, error } = await supabase
-  .from("bookings")
-  .insert({
-    service_id: serviceIdValue,
-    service_title: serviceTitle,
-    service_price: servicePriceValue,
-    customer_name: customerName,
-    customer_email: customerEmail,
-    vehicle_year: yearInput,
-    vehicle_model: vehicleModel,
-    address,
-    booking_date: selectedDateText,
-    booking_time: selectedTime,
-    subtotal,
-    taxes_and_fees: taxesAndFees,
-    total,
-    status: "pending",
-    payment_status: "unpaid",
-  })
-  .select()
-  .single();
-        
+        .from("bookings")
+        .insert({
+          service_id: serviceIdValue,
+          service_title: serviceTitle,
+          service_price: servicePriceValue,
+          customer_name: customerName,
+          customer_email: customerEmail,
+          vehicle_year: yearInput,
+          vehicle_model: vehicleModel,
+          address,
+          booking_date: selectedDateText,
+          booking_time: selectedTime,
+          subtotal,
+          taxes_and_fees: taxesAndFees,
+          total,
+          status: "pending",
+          payment_status: "unpaid",
+        })
+        .select()
+        .single();
 
       if (error) {
         alert(error.message);
@@ -272,9 +283,18 @@ function BookingCheckoutContent() {
                       key={item.id}
                       className="flex justify-between border-b border-white/15 py-4 text-lg"
                     >
-                      <span>
-                        {item.title} x {item.quantity}
-                      </span>
+                      <div>
+                        <span>
+                          {item.title} x {item.quantity}
+                        </span>
+
+                        {item.service_code && (
+                          <p className="text-sm text-yellow-400">
+                            {item.service_code}
+                          </p>
+                        )}
+                      </div>
+
                       <span>
                         ₦{(item.price * item.quantity).toLocaleString()}
                       </span>
@@ -285,7 +305,16 @@ function BookingCheckoutContent() {
                 )
               ) : selectedService ? (
                 <div className="flex justify-between border-b border-white/15 py-4 text-lg">
-                  <span>{selectedService.title}</span>
+                  <div>
+                    <span>{selectedService.title}</span>
+
+                    {selectedService.service_code && (
+                      <p className="text-sm text-yellow-400">
+                        {selectedService.service_code}
+                      </p>
+                    )}
+                  </div>
+
                   <span>₦{selectedService.price.toLocaleString()}</span>
                 </div>
               ) : (
@@ -398,12 +427,13 @@ function BookingCheckoutContent() {
                   placeholder="Your Model"
                   className="rounded-lg border border-white/15 bg-white/5 px-4 py-3 outline-none"
                 />
+
                 <input
-  value={address}
-  onChange={(e) => setAddress(e.target.value)}
-  placeholder="Your address"
-  className="rounded-lg border border-white/15 bg-white/5 px-4 py-3 outline-none md:col-span-2"
-/>
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Your address"
+                  className="rounded-lg border border-white/15 bg-white/5 px-4 py-3 outline-none md:col-span-2"
+                />
               </div>
             </div>
           </div>

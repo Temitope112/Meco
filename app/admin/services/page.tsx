@@ -12,6 +12,7 @@ type Service = {
   category: string;
   description: string;
   image_url: string;
+  service_code: string;
   created_at?: string;
 };
 
@@ -19,7 +20,7 @@ export default function AdminServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [openModal, setOpenModal] = useState(false);
   const [editService, setEditService] = useState<Service | null>(null);
-
+   const [serviceCode, setServiceCode] = useState("");
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("");
@@ -53,6 +54,7 @@ export default function AdminServicesPage() {
     setDescription("");
     setImageFile(null);
     setEditService(null);
+    setServiceCode("");
   };
 
   const openAddModal = () => {
@@ -71,7 +73,7 @@ export default function AdminServicesPage() {
   };
 
   const saveService = async () => {
-    if (!title || !price || !category || !description) {
+   if (!serviceCode || !title || !price || !category || !description || !imageFile) {
       alert("Please fill all fields.");
       return;
     }
@@ -116,6 +118,7 @@ export default function AdminServicesPage() {
             price: Number(price),
             category,
             description,
+            service_code: serviceCode,
             image_url: imageUrl,
           })
           .eq("id", editService.id);
@@ -132,6 +135,7 @@ export default function AdminServicesPage() {
           price: Number(price),
           category,
           description,
+          service_code: serviceCode,
           image_url: imageUrl,
         });
 
@@ -278,7 +282,12 @@ export default function AdminServicesPage() {
                 <X size={14} />
               </button>
             </div>
-
+             <input
+  value={serviceCode}
+  onChange={(e) => setServiceCode(e.target.value)}
+  placeholder="Service Code e.g. MECO-001"
+  className="rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-white outline-none placeholder:text-white/30"
+/>
             <div className="flex flex-col gap-4 px-5 py-5">
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-white/50">
@@ -291,6 +300,7 @@ export default function AdminServicesPage() {
                   className="rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-white outline-none placeholder:text-white/30"
                 />
               </div>
+              
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-white/50">
