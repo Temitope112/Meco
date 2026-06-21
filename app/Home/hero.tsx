@@ -1,6 +1,24 @@
+"use client";
+
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function Hero() {
+  const router = useRouter();
+  const [search, setSearch] = useState("");
+
+  const handleSearch = () => {
+    if (!search.trim()) {
+      router.push("/services");
+      return;
+    }
+
+    router.push(
+      `/services?search=${encodeURIComponent(search.trim())}`
+    );
+  };
+
   return (
     <section className="relative w-full min-h-screen">
       <div className="relative w-full min-h-screen overflow-hidden">
@@ -25,14 +43,23 @@ export default function Hero() {
 
             {/* Search */}
             <div className="mt-10 flex w-full max-w-xl overflow-hidden rounded-xl bg-white">
-              <input
-                type="text"
-                placeholder="What does your car need?"
-                className="flex-1 px-5 py-4 text-gray-700 outline-none"
-              />
-              <button className="bg-yellow-400 px-8 font-semibold text-black hover:bg-yellow-500 cursor-pointer transition-500">
-                Search
-              </button>
+             <input
+  type="text"
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+  onKeyDown={(e) => {
+    if (e.key === "Enter") handleSearch();
+  }}
+  placeholder="What does your car need?"
+  className="flex-1 px-5 py-4 text-gray-700 outline-none"
+/>
+             <button
+  type="button"
+  onClick={handleSearch}
+  className="bg-yellow-400 px-8 font-semibold text-black hover:bg-yellow-500 cursor-pointer transition-all"
+>
+  Search
+</button>
             </div>
           </div>
 
@@ -73,3 +100,4 @@ export default function Hero() {
     </section>
   );
 }
+
