@@ -7,7 +7,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
   User,
-  Briefcase,
+  Wrench,
   Mail,
   Phone,
   Lock,
@@ -19,15 +19,27 @@ import {
   Star,
   Eye,
   EyeOff,
+  MapPin,
+  Briefcase,
+  Upload,
 } from "lucide-react";
 
 export default function SignUpPage() {
   const router = useRouter();
 
-  const [accountType, setAccountType] = useState("customer");
+  const [accountType, setAccountType] = useState<"customer" | "mechanic">(
+    "customer"
+  );
+
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+
+  const [specialization, setSpecialization] = useState("");
+  const [experience, setExperience] = useState("");
+  const [location, setLocation] = useState("");
+  const [mechanicImage, setMechanicImage] = useState<File | null>(null);
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -38,8 +50,18 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
 
   const handleSignUp = async () => {
-    if (!fullName || !email || !phone || !password || !confirmPassword) {
-      alert("Please fill in all fields.");
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!fullName || !cleanEmail || !phone || !password || !confirmPassword) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+
+    if (
+      accountType === "mechanic" &&
+      (!specialization || !experience || !location || !mechanicImage)
+    ) {
+      alert("Please fill in all mechanic details and upload a profile image.");
       return;
     }
 
@@ -56,8 +78,8 @@ export default function SignUpPage() {
     try {
       setLoading(true);
 
-      const { error } = await supabase.auth.signUp({
-        email,
+      const { data: signUpData, error } = await supabase.auth.signUp({
+        email: cleanEmail,
         password,
         options: {
           data: {
@@ -70,6 +92,55 @@ export default function SignUpPage() {
 
       if (error) {
         alert(error.message);
+        return;
+      }
+
+      if (accountType === "mechanic") {
+        let imageUrl = "";
+
+        if (mechanicImage) {
+          const fileExt = mechanicImage.name.split(".").pop();
+          const fileName = `${Date.now()}-${Math.random()
+            .toString(36)
+            .substring(2)}.${fileExt}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from("mechanics")
+            .upload(fileName, mechanicImage);
+
+          if (uploadError) {
+            alert(uploadError.message);
+            return;
+          }
+
+          const { data } = supabase.storage
+            .from("mechanics")
+            .getPublicUrl(fileName);
+
+          imageUrl = data.publicUrl;
+        }
+
+        const { error: mechanicError } = await supabase
+          .from("MECHANICS")
+          .insert({
+            full_name: fullName,
+            email: cleanEmail,
+            phone,
+            specialization,
+            experience,
+            location,
+            image_url: imageUrl,
+            status: "pending",
+            is_approved: false,
+          });
+
+        if (mechanicError) {
+          alert(mechanicError.message);
+          return;
+        }
+
+        alert("Mechanic account submitted successfully!");
+        router.push("/mechanic-pending");
         return;
       }
 
@@ -101,7 +172,7 @@ export default function SignUpPage() {
             </h1>
 
             <p className="mt-3 text-white/60">
-              Join MECO and experience premium car care
+              Join MECO and experience premium car care.
             </p>
           </div>
 
@@ -109,29 +180,29 @@ export default function SignUpPage() {
             <button
               type="button"
               onClick={() => setAccountType("customer")}
-              className={`rounded-xl border p-5 text-left ${
+              className={`rounded-xl border p-5 text-left transition ${
                 accountType === "customer"
                   ? "border-yellow-400 bg-yellow-400/10"
-                  : "border-white/10 bg-white/5"
+                  : "border-white/10 bg-white/5 hover:bg-white/10"
               }`}
             >
               <User className="mb-3 text-yellow-400" />
-              <h3 className="font-semibold cursor-pointer">Customer</h3>
+              <h3 className="font-semibold">Customer</h3>
               <p className="text-sm text-white/60">Book services</p>
             </button>
 
             <button
               type="button"
-              onClick={() => setAccountType("business")}
-              className={`rounded-xl border p-5 text-left ${
-                accountType === "business"
+              onClick={() => setAccountType("mechanic")}
+              className={`rounded-xl border p-5 text-left transition ${
+                accountType === "mechanic"
                   ? "border-yellow-400 bg-yellow-400/10"
-                  : "border-white/10 bg-white/5"
+                  : "border-white/10 bg-white/5 hover:bg-white/10"
               }`}
             >
-              <Briefcase className="mb-3 text-white/70" />
-              <h3 className="font-semibold cursor-pointer">Business</h3>
-              <p className="text-sm text-white/60">Manage services</p>
+              <Wrench className="mb-3 text-yellow-400" />
+              <h3 className="font-semibold">Mechanic</h3>
+              <p className="text-sm text-white/60">Receive jobs</p>
             </button>
           </div>
 
@@ -160,6 +231,60 @@ export default function SignUpPage() {
               value={phone}
               onChange={setPhone}
             />
+
+            {accountType === "mechanic" && (
+              <>
+                <Input
+                  icon={<Briefcase size={18} />}
+                  label="Specialization"
+                  placeholder="e.g. Engine repair, Brake service"
+                  value={specialization}
+                  onChange={setSpecialization}
+                />
+
+                <Input
+                  icon={<Wrench size={18} />}
+                  label="Years of Experience"
+                  placeholder="e.g. 3 years"
+                  value={experience}
+                  onChange={setExperience}
+                />
+
+                <Input
+                  icon={<MapPin size={18} />}
+                  label="Location"
+                  placeholder="e.g. Ogbomosho, Nigeria"
+                  value={location}
+                  onChange={setLocation}
+                />
+
+                <label className="block cursor-pointer">
+                  <span className="mb-2 block text-sm">
+                    Mechanic Profile Image
+                  </span>
+
+                  <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-white/20 bg-white/5 px-4 py-6 text-center transition hover:bg-white/10">
+                    <Upload className="mb-2 text-yellow-400" size={24} />
+
+                    <p className="text-sm text-white/60">
+                      {mechanicImage
+                        ? mechanicImage.name
+                        : "Click to upload profile image"}
+                    </p>
+
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) setMechanicImage(file);
+                      }}
+                      className="hidden"
+                    />
+                  </div>
+                </label>
+              </>
+            )}
 
             <PasswordInput
               icon={<Lock size={18} />}
@@ -212,24 +337,19 @@ export default function SignUpPage() {
             type="button"
             onClick={handleSignUp}
             disabled={loading}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 py-4 font-bold text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+            className="mt-6 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-yellow-400 py-4 font-bold text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <User size={20} />
-            {loading ? "Creating Account..." : "Create Account"}
-          </button>
+            {accountType === "mechanic" ? (
+              <Wrench size={20} />
+            ) : (
+              <User size={20} />
+            )}
 
-          <div className="my-7 flex items-center gap-4 text-sm text-white/50">
-            <span className="h-px flex-1 bg-white/10" />
-            OR
-            <span className="h-px flex-1 bg-white/10" />
-          </div>
-
-          <button className="w-full rounded-xl bg-white py-4 font-semibold text-black transition hover:bg-gray-200 cursor-pointer">
-            Sign up with Google
-          </button>
-
-          <button className="mt-4 w-full rounded-xl border border-white/10 py-4 font-semibold transition hover:bg-white/10 cursor-pointer">
-            Sign up with Apple
+            {loading
+              ? "Creating Account..."
+              : accountType === "mechanic"
+              ? "Apply as Mechanic"
+              : "Create Account"}
           </button>
 
           <p className="mt-8 text-center text-white/60">
@@ -257,8 +377,8 @@ export default function SignUpPage() {
             </h2>
 
             <p className="mt-5 max-w-md text-lg text-white/70">
-              Join thousands of customers who trust MECO for reliable and
-              professional car care services.
+              Join customers and mechanics using MECO for reliable car care
+              services.
             </p>
 
             <div className="mt-10 space-y-6">

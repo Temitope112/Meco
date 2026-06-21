@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, Lock, Mail } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -16,7 +16,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) {
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanEmail || !password) {
       alert("Please enter your email and password.");
       return;
     }
@@ -24,8 +26,8 @@ export default function LoginPage() {
     try {
       setLoading(true);
 
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
         password,
       });
 
@@ -34,10 +36,13 @@ export default function LoginPage() {
         return;
       }
 
+      const accountType = data.user?.user_metadata?.account_type;
       const adminEmail = "temitopeeniola295@gmail.com";
 
-      if (email.toLowerCase() === adminEmail.toLowerCase()) {
+      if (cleanEmail === adminEmail.toLowerCase()) {
         router.push("/admin");
+      } else if (accountType === "mechanic") {
+        router.push("/mechanic-pending");
       } else {
         router.push("/dashboard");
       }
@@ -64,20 +69,11 @@ export default function LoginPage() {
           <div className="absolute inset-0 bg-black/50" />
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
 
-          {/* <div className="absolute left-12 top-10">
-            <Image
-              src="/meco.jpeg"
-              alt="MECO Logo"
-              width={150}
-              height={60}
-              className="rounded-md"
-            />
-          </div> */}
-
           <div className="absolute bottom-14 left-12 max-w-md">
             <h1 className="text-4xl font-bold leading-tight">
               Reliable car care, made simple.
             </h1>
+
             <p className="mt-4 text-sm leading-6 text-white/70">
               Book trusted mechanics, manage your services, and track your
               bookings from one dashboard.
@@ -89,7 +85,7 @@ export default function LoginPage() {
           <div className="w-full max-w-md">
             <div className="mb-8 flex justify-center lg:hidden">
               <Image
-                src="/mech.png"
+                src="/meco.jpeg"
                 alt="MECO Logo"
                 width={130}
                 height={50}
@@ -112,6 +108,7 @@ export default function LoginPage() {
 
                   <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                     <Mail size={17} className="text-white/40" />
+
                     <input
                       type="email"
                       placeholder="you@example.com"
@@ -129,6 +126,7 @@ export default function LoginPage() {
 
                   <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                     <Lock size={17} className="text-white/40" />
+
                     <input
                       type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
@@ -140,9 +138,9 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="text-white/40 hover:text-white"
+                      className="text-white/40 transition hover:text-white"
                     >
-                      <Eye size={17} />
+                      {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
                     </button>
                   </div>
                 </div>
