@@ -121,7 +121,7 @@ export default function SignUpPage() {
         }
 
         const { error: mechanicError } = await supabase
-          .from("MECHANICS")
+           .from("mechanics")
           .insert({
             full_name: fullName,
             email: cleanEmail,
