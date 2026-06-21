@@ -1,8 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Wrench, Trash2, Plus } from "lucide-react";
+import { CheckCircle, Trash2, Wrench, XCircle } from "lucide-react";
 
 type Mechanic = {
   id: number;
@@ -10,17 +11,16 @@ type Mechanic = {
   email: string;
   phone: string;
   specialization: string;
+  experience: string | null;
+  location: string | null;
+  image_url: string | null;
   status: string;
+  is_approved: boolean;
 };
 
 export default function AdminMechanicsPage() {
   const [mechanics, setMechanics] = useState<Mechanic[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [specialization, setSpecialization] = useState("");
 
   const fetchMechanics = async () => {
     setLoading(true);
@@ -44,43 +44,17 @@ export default function AdminMechanicsPage() {
     fetchMechanics();
   }, []);
 
-  const addMechanic = async () => {
-    if (!fullName || !email || !phone || !specialization) {
-      alert("Please fill in all mechanic details.");
-      return;
-    }
-
-    const { error } = await supabase.from("mechanics").insert({
-      full_name: fullName,
-      email,
-      phone,
-      specialization,
-      status: "available",
-    });
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    setFullName("");
-    setEmail("");
-    setPhone("");
-    setSpecialization("");
-
-    fetchMechanics();
-  };
-
-  const deleteMechanic = async (id: number) => {
-    const confirmed = confirm(
-      "Are you sure you want to delete this mechanic?"
-    );
-
-    if (!confirmed) return;
-
+  const updateMechanicStatus = async (
+    id: number,
+    status: "available" | "rejected",
+    approved: boolean
+  ) => {
     const { error } = await supabase
       .from("mechanics")
-      .delete()
+      .update({
+        status,
+        is_approved: approved,
+      })
       .eq("id", id);
 
     if (error) {
@@ -89,8 +63,27 @@ export default function AdminMechanicsPage() {
     }
 
     setMechanics((prev) =>
-      prev.filter((mechanic) => mechanic.id !== id)
+      prev.map((mechanic) =>
+        mechanic.id === id
+          ? { ...mechanic, status, is_approved: approved }
+          : mechanic
+      )
     );
+  };
+
+  const deleteMechanic = async (id: number) => {
+    const confirmed = confirm("Are you sure you want to delete this mechanic?");
+
+    if (!confirmed) return;
+
+    const { error } = await supabase.from("mechanics").delete().eq("id", id);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setMechanics((prev) => prev.filter((mechanic) => mechanic.id !== id));
   };
 
   return (
@@ -99,123 +92,189 @@ export default function AdminMechanicsPage() {
         <h1 className="text-3xl font-bold">Mechanics</h1>
 
         <p className="mt-2 text-white/60">
-          Add, manage and assign mechanics to bookings.
+          Review mechanic applications, approve qualified mechanics, or reject
+          applications.
         </p>
       </div>
 
-      {/* Add Mechanic Form */}
-
-      <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6">
-        <h2 className="mb-5 text-lg font-bold">Add Mechanic</h2>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <input
-            type="text"
-            placeholder="Full Name"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 outline-none"
-          />
-
-          <input
-            type="email"
-            placeholder="Email Address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 outline-none"
-          />
-
-          <input
-            type="text"
-            placeholder="Phone Number"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 outline-none"
-          />
-
-          <input
-            type="text"
-            placeholder="Specialization"
-            value={specialization}
-            onChange={(e) => setSpecialization(e.target.value)}
-            className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 outline-none"
-          />
-        </div>
-
-        <button
-          onClick={addMechanic}
-          className="mt-5 flex items-center gap-2 rounded-lg bg-yellow-400 px-5 py-3 font-bold text-black transition hover:bg-yellow-300"
-        >
-          <Plus size={18} />
-          Add Mechanic
-        </button>
-      </div>
-
-      {/* Mechanics List */}
-
       <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-        <h2 className="mb-5 text-lg font-bold">
-          Registered Mechanics
-        </h2>
+        <div className="mb-5 flex items-center justify-between gap-4">
+          <h2 className="text-lg font-bold">Registered Mechanics</h2>
+
+          <button
+            type="button"
+            onClick={fetchMechanics}
+            className="rounded-lg bg-yellow-400 px-4 py-2 text-sm font-bold text-black transition hover:bg-yellow-300"
+          >
+            Refresh
+          </button>
+        </div>
 
         {loading ? (
           <p className="text-white/50">Loading mechanics...</p>
         ) : mechanics.length === 0 ? (
-          <p className="text-white/50">
-            No mechanics registered yet.
-          </p>
+          <p className="text-white/50">No mechanics registered yet.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full min-w-[1050px] text-left text-sm">
               <thead className="text-white/50">
                 <tr>
                   <th className="py-3">Mechanic</th>
                   <th>Email</th>
                   <th>Phone</th>
                   <th>Specialization</th>
+                  <th>Experience</th>
+                  <th>Location</th>
                   <th>Status</th>
+                  <th>Approved</th>
                   <th>Action</th>
                 </tr>
               </thead>
 
               <tbody>
                 {mechanics.map((mechanic) => (
-                  <tr
-                    key={mechanic.id}
-                    className="border-t border-white/10"
-                  >
-                    <td className="py-4 flex items-center gap-2">
-                      <Wrench size={16} />
-                      {mechanic.full_name}
+                  <tr key={mechanic.id} className="border-t border-white/10">
+                    <td className="py-4">
+                      <div className="flex items-center gap-3">
+                        {mechanic.image_url ? (
+                          <Image
+                            src={mechanic.image_url}
+                            alt={mechanic.full_name}
+                            width={42}
+                            height={42}
+                            className="h-11 w-11 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-yellow-400">
+                            <Wrench size={18} />
+                          </div>
+                        )}
+
+                        <div>
+                          <p className="font-semibold">
+                            {mechanic.full_name}
+                          </p>
+                          <p className="text-xs text-white/40">
+                            ID: {mechanic.id}
+                          </p>
+                        </div>
+                      </div>
                     </td>
 
-                    <td>{mechanic.email}</td>
-
-                    <td>{mechanic.phone}</td>
-
+                    <td className="text-white/60">{mechanic.email}</td>
+                    <td className="text-white/60">{mechanic.phone}</td>
                     <td>{mechanic.specialization}</td>
+                    <td className="text-white/60">
+                      {mechanic.experience || "Not added"}
+                    </td>
+                    <td className="text-white/60">
+                      {mechanic.location || "Not added"}
+                    </td>
 
                     <td>
                       <span
                         className={`rounded-md px-3 py-1 text-xs ${
                           mechanic.status === "available"
                             ? "bg-green-500/20 text-green-400"
+                            : mechanic.status === "rejected"
+                            ? "bg-red-500/20 text-red-400"
                             : "bg-yellow-500/20 text-yellow-400"
                         }`}
                       >
-                        {mechanic.status}
+                        {mechanic.status || "pending"}
                       </span>
                     </td>
 
                     <td>
-                      <button
-                        onClick={() =>
-                          deleteMechanic(mechanic.id)
-                        }
-                        className="text-red-400 hover:text-red-300"
+                      <span
+                        className={`rounded-md px-3 py-1 text-xs ${
+                          mechanic.is_approved
+                            ? "bg-green-500/20 text-green-400"
+                            : "bg-yellow-500/20 text-yellow-400"
+                        }`}
                       >
-                        <Trash2 size={18} />
-                      </button>
+                        {mechanic.is_approved ? "Yes" : "No"}
+                      </span>
+                    </td>
+
+                    <td>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {mechanic.status === "pending" && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateMechanicStatus(
+                                  mechanic.id,
+                                  "available",
+                                  true
+                                )
+                              }
+                              className="flex items-center gap-1 rounded-lg bg-green-500 px-3 py-2 text-xs font-bold text-white transition hover:bg-green-600"
+                            >
+                              <CheckCircle size={14} />
+                              Approve
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateMechanicStatus(
+                                  mechanic.id,
+                                  "rejected",
+                                  false
+                                )
+                              }
+                              className="flex items-center gap-1 rounded-lg bg-red-500 px-3 py-2 text-xs font-bold text-white transition hover:bg-red-600"
+                            >
+                              <XCircle size={14} />
+                              Reject
+                            </button>
+                          </>
+                        )}
+
+                        {mechanic.status === "rejected" && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateMechanicStatus(
+                                mechanic.id,
+                                "available",
+                                true
+                              )
+                            }
+                            className="flex items-center gap-1 rounded-lg bg-green-500 px-3 py-2 text-xs font-bold text-white transition hover:bg-green-600"
+                          >
+                            <CheckCircle size={14} />
+                            Approve
+                          </button>
+                        )}
+
+                        {mechanic.status === "available" && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateMechanicStatus(
+                                mechanic.id,
+                                "rejected",
+                                false
+                              )
+                            }
+                            className="flex items-center gap-1 rounded-lg bg-red-500 px-3 py-2 text-xs font-bold text-white transition hover:bg-red-600"
+                          >
+                            <XCircle size={14} />
+                            Reject
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => deleteMechanic(mechanic.id)}
+                          className="text-red-400 transition hover:text-red-300"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
