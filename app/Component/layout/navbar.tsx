@@ -18,7 +18,11 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [accountType, setAccountType] = useState("");
   const [checkingUser, setCheckingUser] = useState(true);
+
+  const dashboardHref =
+    accountType === "mechanic" ? "/mechanic-pending" : "/dashboard";
 
   useEffect(() => {
     const handleScroll = () => {
@@ -39,15 +43,18 @@ export default function Navbar() {
           error,
         } = await supabase.auth.getUser();
 
-        if (error) {
+        if (error || !user) {
           setUser(null);
+          setAccountType("");
           return;
         }
 
         setUser(user);
+        setAccountType(user.user_metadata?.account_type || "");
       } catch (error) {
         console.log("Navbar auth check failed:", error);
         setUser(null);
+        setAccountType("");
       } finally {
         setCheckingUser(false);
       }
@@ -59,6 +66,7 @@ export default function Navbar() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      setAccountType(session?.user?.user_metadata?.account_type || "");
       setCheckingUser(false);
     });
 
@@ -66,12 +74,6 @@ export default function Navbar() {
       subscription.unsubscribe();
     };
   }, []);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setOpen(false);
-  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 w-full">
@@ -109,26 +111,12 @@ export default function Navbar() {
           <div className="hidden items-center gap-3 lg:flex">
             {!checkingUser &&
               (user ? (
-                <>
-                  <Link
-                    href="/dashboard"
-                    className="rounded-lg bg-orange-500 px-5 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
-                  >
-                    Dashboard
-                  </Link>
-
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className={`rounded-lg border px-5 py-2 text-sm transition ${
-                      scrolled
-                        ? "border-zinc-700 text-white hover:border-zinc-500"
-                        : "border-zinc-300 text-black hover:border-zinc-500"
-                    }`}
-                  >
-                    Logout
-                  </button>
-                </>
+                <Link
+                  href={dashboardHref}
+                  className="rounded-lg bg-orange-500 px-5 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
+                >
+                  Dashboard
+                </Link>
               ) : (
                 <>
                   <Link
@@ -183,27 +171,13 @@ export default function Navbar() {
 
               {!checkingUser &&
                 (user ? (
-                  <>
-                    <Link
-                      href="/dashboard"
-                      onClick={() => setOpen(false)}
-                      className="rounded-lg bg-orange-500 py-2 text-center text-white"
-                    >
-                      Dashboard
-                    </Link>
-
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className={`rounded-lg border py-2 text-center ${
-                        scrolled
-                          ? "border-zinc-700 text-white"
-                          : "border-zinc-300 text-black"
-                      }`}
-                    >
-                      Logout
-                    </button>
-                  </>
+                  <Link
+                    href={dashboardHref}
+                    onClick={() => setOpen(false)}
+                    className="rounded-lg bg-orange-500 py-2 text-center text-white"
+                  >
+                    Dashboard
+                  </Link>
                 ) : (
                   <>
                     <Link
