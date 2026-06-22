@@ -61,20 +61,20 @@ export default function ContactPage() {
                 <div className="flex gap-4">
                   <MapPin className="mt-1 text-black" size={22} />
                   <div className="text-sm leading-6">
-                    <p>CarFix Headquarters</p>
-                    <p>123 Auto Drive,</p>
-                    <p>Mechanicsville, MD 20659</p>
+                    <p>MECO Headquarters</p>
+                    <p>Ogbomosho, Oyo State</p>
+                    <p>Nigeria</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-4">
                   <Phone className="text-black" size={22} />
-                  <p className="text-sm">+1 (555) 123-4567</p>
+                  <p className="text-sm">+234 805 797 7603</p>
                 </div>
 
                 <div className="flex items-center gap-4">
                   <Mail className="text-black" size={22} />
-                  <p className="text-sm">support@carfix.com</p>
+                  <p className="text-sm">support@meco.com</p>
                 </div>
               </div>
 

@@ -71,10 +71,8 @@ export default function AboutPage() {
               </h1>
 
               <p className="mt-6 max-w-xl text-base leading-8 text-white/90 md:text-lg">
-                Meco was a lifesfted history and ecodences. Our company,
-                isvitor insoiative working, and repoved the years of our
-                morasapaxity. tions prepared our mission in an-ioon rereiting
-                and ohechante-buiraan is and our transformation.
+                MECO is a modern automotive service platform dedicated to connecting vehicle owners with trusted mechanics. We simplify car maintenance and repairs through reliable service, seamless booking, and professional support, ensuring every customer enjoys a stress-free experience.
+
               </p>
             </div>
           </div>
