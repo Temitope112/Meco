@@ -1,6 +1,6 @@
 "use client";
 
-import Footer from "@/app/Component/layout/footer";
+
 import { supabase } from "@/lib/supabase";
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -490,7 +490,7 @@ function BookingCheckoutContent() {
         </div>
       </section>
 
-      <Footer />
+      
     </main>
   );
 }
