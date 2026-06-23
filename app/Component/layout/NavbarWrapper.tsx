@@ -6,7 +6,7 @@ import Navbar from "./navbar";
 export default function NavbarWrapper() {
   const pathname = usePathname();
 
-  if (pathname.startsWith("/admin") || pathname.startsWith("/dashboard")) {
+  if (pathname.startsWith("/admin") || pathname.startsWith("/dashboard") || pathname.startsWith("/mechanic-dashboard")) {
     return null;
   }
 

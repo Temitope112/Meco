@@ -54,7 +54,7 @@ function BookingCheckoutContent() {
   const [yearInput, setYearInput] = useState("");
   const [vehicleModel, setVehicleModel] = useState("");
   const [address, setAddress] = useState("");
-
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [selectedTime, setSelectedTime] = useState("9:00 AM");
@@ -73,6 +73,7 @@ function BookingCheckoutContent() {
       }
 
       setCustomerEmail(user.email || "");
+      setCustomerName(user.user_metadata.name || "");
       setCheckingUser(false);
     };
 
@@ -169,8 +170,8 @@ function BookingCheckoutContent() {
       return;
     }
 
-    if (!customerName || !customerEmail || !yearInput || !vehicleModel || !address) {
-      alert("Please fill in all vehicle details, email and address.");
+    if (!customerName || !customerEmail || !yearInput || !vehicleModel || !address || !phoneNumber) {
+      alert("Please fill in all vehicle details, email, phone number and address.");
       return;
     }
 
@@ -200,6 +201,7 @@ function BookingCheckoutContent() {
           service_price: servicePriceValue,
           customer_name: customerName,
           customer_email: customerEmail,
+          customer_phone: phoneNumber,
           vehicle_year: yearInput,
           vehicle_model: vehicleModel,
           address,
@@ -412,6 +414,13 @@ function BookingCheckoutContent() {
                   placeholder="Your name"
                   className="rounded-lg border border-white/15 bg-white/5 px-4 py-3 outline-none"
                 />
+
+                <input
+  value={phoneNumber}
+  onChange={(e) => setPhoneNumber(e.target.value)}
+  placeholder="Phone Number"
+  className="rounded-lg border border-white/15 bg-white/5 px-4 py-3 outline-none"
+/>
 
                 <input
                   value={customerEmail}
