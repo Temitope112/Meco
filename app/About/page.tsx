@@ -5,21 +5,21 @@ import Footer from "@/app/Component/layout/footer";
 const mechanics = [
   {
     id: 1,
-    name: "John Doe",
-    role: "Master Technician",
-    image: "/mechanic-1.png",
+    name: "Sola Adeyemi",
+    role: "Brake Specialist",
+    image: "/mech-1.jpg",
   },
   {
     id: 2,
-    name: "John Doe",
-    role: "Master Technician",
-    image: "/mechanic-2.png",
+    name: "Emeka Okafor",
+    role: "Transmission Expert",
+    image: "/mech-2.jpg",
   },
   {
     id: 3,
-    name: "Javon Doe",
-    role: "Master Technician",
-    image: "/mechanic-3.png",
+    name: "Funmi Adebayo",
+    role: "Engine Specialist",
+    image: "/mech-3.jpg",
   },
 ];
 
