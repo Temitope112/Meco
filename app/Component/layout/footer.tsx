@@ -81,7 +81,7 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* <div>
+          <div>
             <h3 className="text-base font-semibold">Support</h3>
 
             <div className="mt-4 flex flex-col gap-3 text-sm text-white/60">
@@ -98,7 +98,7 @@ export default function Footer() {
                 Refund Policy
               </p>
             </div>
-          </div> */}
+          </div>
 
           <div>
             <h3 className="text-base font-semibold">Contact</h3>

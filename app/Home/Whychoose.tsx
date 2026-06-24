@@ -16,7 +16,7 @@ export default function WhyChoose() {
         {/* LEFT */}
         <div>
           <h2 className="mb-8 text-3xl font-bold text-black md:text-4xl">
-            Why Choose CarFix?
+            Why Choose Meco?
           </h2>
 
           <div className="space-y-6">
