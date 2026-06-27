@@ -82,23 +82,38 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="text-base font-semibold">Support</h3>
+  <h3 className="text-base font-semibold">Support</h3>
 
-            <div className="mt-4 flex flex-col gap-3 text-sm text-white/60">
-              <p className="cursor-pointer hover:text-yellow-400">
-                Help Center
-              </p>
-              <p className="cursor-pointer hover:text-yellow-400">
-                Terms & Conditions
-              </p>
-              <p className="cursor-pointer hover:text-yellow-400">
-                Privacy Policy
-              </p>
-              <p className="cursor-pointer hover:text-yellow-400">
-                Refund Policy
-              </p>
-            </div>
-          </div>
+  <div className="mt-4 flex flex-col gap-3 text-sm text-white/60">
+    <Link
+      href="/help"
+      className="transition hover:text-yellow-400"
+    >
+      Help Center
+    </Link>
+
+    <Link
+      href="/terms"
+      className="transition hover:text-yellow-400"
+    >
+      Terms & Conditions
+    </Link>
+
+    <Link
+      href="/policy"
+      className="transition hover:text-yellow-400"
+    >
+      Privacy Policy
+    </Link>
+
+    <Link
+      href="/refund"
+      className="transition hover:text-yellow-400"
+    >
+      Refund Policy
+    </Link>
+  </div>
+</div>
 
           <div>
             <h3 className="text-base font-semibold">Contact</h3>

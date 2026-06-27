@@ -16,6 +16,10 @@ import {
   Wrench,
   X,
 } from "lucide-react";
+import {
+  sendJobAcceptedEmail,
+  sendJobCompletedEmail,
+} from "@/lib/emailNotifications";
 
 type Mechanic = {
   id: number;
@@ -23,7 +27,7 @@ type Mechanic = {
   email: string;
   phone: string;
   specialization: string;
-  status: string;
+  status: "available" | "busy" | "offline" | "pending" | "rejected";
   is_approved: boolean;
   image_url: string | null;
 };
@@ -54,6 +58,7 @@ export default function MechanicDashboardPage() {
   const [selectedJob, setSelectedJob] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const fetchDashboard = async () => {
     setLoading(true);
@@ -78,7 +83,11 @@ export default function MechanicDashboardPage() {
       return;
     }
 
-    if (!mechanicData.is_approved || mechanicData.status !== "available") {
+    if (
+      !mechanicData.is_approved ||
+      mechanicData.status === "pending" ||
+      mechanicData.status === "rejected"
+    ) {
       router.push("/mechanic-pending");
       return;
     }
@@ -105,7 +114,38 @@ export default function MechanicDashboardPage() {
     fetchDashboard();
   }, []);
 
+  const updateMechanicAvailability = async (
+    status: "available" | "busy" | "offline"
+  ) => {
+    if (!mechanic) return;
+
+    try {
+      setUpdatingStatus(true);
+
+      const { error } = await supabase
+        .from("mechanics")
+        .update({ status })
+        .eq("id", mechanic.id);
+
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
+      setMechanic((prev) => (prev ? { ...prev, status } : prev));
+    } catch (error) {
+      console.log(error);
+      alert("Unable to update availability.");
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
   const updateJobStatus = async (bookingId: number, status: string) => {
+    const currentJob = jobs.find((job) => job.id === bookingId);
+
+    if (!currentJob) return;
+
     setUpdatingId(bookingId);
 
     const { error } = await supabase
@@ -119,8 +159,18 @@ export default function MechanicDashboardPage() {
       return;
     }
 
+    const updatedJob = { ...currentJob, status };
+
+    if (status === "accepted") {
+      await sendJobAcceptedEmail(updatedJob);
+    }
+
+    if (status === "completed") {
+      await sendJobCompletedEmail(updatedJob);
+    }
+
     setJobs((prev) =>
-      prev.map((job) => (job.id === bookingId ? { ...job, status } : job))
+      prev.map((job) => (job.id === bookingId ? updatedJob : job))
     );
 
     setSelectedJob((prev) =>
@@ -149,11 +199,29 @@ export default function MechanicDashboardPage() {
           </h1>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3">
           <Bell size={20} />
-          <span className="rounded-full bg-green-500/20 px-4 py-2 text-sm text-green-400">
-            Available
-          </span>
+
+          <select
+            value={mechanic?.status || "available"}
+            disabled={updatingStatus}
+            onChange={(e) =>
+              updateMechanicAvailability(
+                e.target.value as "available" | "busy" | "offline"
+              )
+            }
+            className={`rounded-full border border-white/10 px-4 py-2 text-sm font-medium outline-none disabled:opacity-60 ${
+              mechanic?.status === "available"
+                ? "bg-green-500/20 text-green-400"
+                : mechanic?.status === "busy"
+                ? "bg-yellow-500/20 text-yellow-400"
+                : "bg-red-500/20 text-red-400"
+            }`}
+          >
+            <option value="available">Available</option>
+            <option value="busy">Busy</option>
+            <option value="offline">Offline</option>
+          </select>
         </div>
       </div>
 
@@ -237,6 +305,7 @@ export default function MechanicDashboardPage() {
                         <CalendarDays size={15} />
                         {job.booking_date}
                       </div>
+
                       <div className="mt-1 flex items-center gap-2">
                         <Clock size={15} />
                         {job.booking_time}

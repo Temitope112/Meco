@@ -1,5 +1,5 @@
 "use client";
-
+import { sendWelcomeEmail } from "@/lib/emailNotifications";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -91,10 +91,11 @@ export default function SignUpPage() {
       });
 
       if (error) {
-        alert(error.message);
-        return;
-      }
+  alert(error.message);
+  return;
+}
 
+await sendWelcomeEmail(cleanEmail, fullName);
       if (accountType === "mechanic") {
         let imageUrl = "";
 

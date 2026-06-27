@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { sendPaymentSuccessEmail } from "@/lib/emailNotifications";
 
 export async function POST(request: Request) {
   try {
@@ -70,6 +71,8 @@ export async function POST(request: Request) {
       );
     }
 
+    const alreadyPaid = booking.payment_status === "paid";
+
     const { error: updateError } = await supabase
       .from("bookings")
       .update({
@@ -86,6 +89,19 @@ export async function POST(request: Request) {
         { message: updateError.message },
         { status: 400 }
       );
+    }
+
+    const updatedBooking = {
+      ...booking,
+      payment_status: "paid",
+      payment_reference: txRef,
+      payment_channel: payment.payment_type || "flutterwave",
+      paid_at: new Date().toISOString(),
+      status: "confirmed",
+    };
+
+    if (!alreadyPaid) {
+      await sendPaymentSuccessEmail(updatedBooking);
     }
 
     return NextResponse.json({

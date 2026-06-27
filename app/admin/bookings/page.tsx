@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { X } from "lucide-react";
+import {
+  sendMechanicAssignedEmail,
+  sendNewJobEmail,
+} from "@/lib/emailNotifications";
 
 type Booking = {
   id: number;
@@ -120,12 +124,16 @@ export default function AdminBookingsPage() {
       }
 
       const updatedBooking = {
-        ...selectedBooking,
-        assigned_mechanic_id: mechanic.id,
-        assigned_mechanic_name: mechanic.full_name,
-      };
+  ...selectedBooking,
+  assigned_mechanic_id: mechanic.id,
+  assigned_mechanic_name: mechanic.full_name,
+};
 
-      setSelectedBooking(updatedBooking);
+await sendMechanicAssignedEmail(updatedBooking, mechanic);
+
+await sendNewJobEmail(updatedBooking, mechanic);
+
+setSelectedBooking(updatedBooking);
 
       setBookings((prev) =>
         prev.map((booking) =>

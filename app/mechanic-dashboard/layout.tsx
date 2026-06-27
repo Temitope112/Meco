@@ -47,28 +47,28 @@ export default function MechanicDashboardLayout({
             />
 
             <SidebarLink
-              href="/mechanic-dashboard"
+              href="/mechanic-dashboard/jobs"
               label="Assigned Jobs"
               icon={<ClipboardList size={18} />}
-              active={false}
+              active={pathname === "/mechanic-dashboard/jobs"}
             />
 
             <SidebarLink
-              href="/mechanic-dashboard"
+              href="/mechanic-dashboard/completed-jobs"
               label="Completed Jobs"
               icon={<CheckCircle size={18} />}
-              active={false}
+              active={pathname === "/mechanic-dashboard/completed-jobs"}
             />
 
             <SidebarLink
-              href="/mechanic-dashboard"
+              href="/mechanic-dashboard/earnings"
               label="Earnings"
               icon={<Wallet size={18} />}
               active={false}
             />
 
             <SidebarLink
-              href="/mechanic-dashboard"
+              href="/mechanic-dashboard/profile"
               label="Profile"
               icon={<User size={18} />}
               active={false}
@@ -80,7 +80,7 @@ export default function MechanicDashboardLayout({
           <button
             type="button"
             onClick={handleLogout}
-            className="flex items-center gap-3 text-red-400 transition hover:text-red-300"
+            className="flex items-center gap-3 text-red-400 transition hover:text-red-300 cursor-pointer"
           >
             <LogOut size={18} />
             Logout
