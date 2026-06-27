@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { sendPaymentSuccessEmail } from "@/lib/emailNotifications";
 
 export async function POST(request: Request) {
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
 
     const bookingId = txRef.split("-")[1];
 
-    const { data: booking, error: bookingError } = await supabase
+    const { data: booking, error: bookingError } = await supabaseAdmin
       .from("bookings")
       .select("*")
       .eq("id", bookingId)
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
 
     const alreadyPaid = booking.payment_status === "paid";
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from("bookings")
       .update({
         payment_status: "paid",
