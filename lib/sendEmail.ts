@@ -1,35 +1,6 @@
-// export async function sendEmail({
-//   to,
-//   subject,
-//   message,
-// }: {
-//   to: string;
-//   subject: string;
-//   message: string;
-// }) {
-//   try {
-//     const baseUrl =
-//       process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+import { Resend } from "resend";
 
-//     const res = await fetch(`${baseUrl}/api/send-email`, {
-//       method: "POST",
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//       body: JSON.stringify({ to, subject, message }),
-//     });
-
-//     const data = await res.json();
-
-//     if (!res.ok) {
-//       console.log("Email API error:", data);
-//     }
-
-//     return data;
-//   } catch (error) {
-//     console.log("Email failed:", error);
-//   }
-// }
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendEmail({
   to,
@@ -41,28 +12,29 @@ export async function sendEmail({
   message: string;
 }) {
   try {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_SITE_URL?.replace("NEXT_PUBLIC_SITE_URL=", "") ||
-      "http://localhost:3000";
-
-    const res = await fetch(`${baseUrl}/api/send-email`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ to, subject, message }),
+    const { data, error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM || "onboarding@resend.dev",
+      to,
+      subject,
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.7;">
+          <h2 style="color:#111;">MECO</h2>
+          <p>${message.replace(/\n/g, "<br />")}</p>
+          <br />
+          <p style="color:#666;">Thank you for using MECO.</p>
+        </div>
+      `,
     });
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      console.log("Email API error:", data);
-    } else {
-      console.log("Email sent:", data);
+    if (error) {
+      console.log("RESEND EMAIL ERROR:", error);
+      return { success: false, error };
     }
 
-    return data;
+    console.log("RESEND EMAIL SENT:", data);
+    return { success: true, data };
   } catch (error) {
-    console.log("Email failed:", error);
+    console.log("SEND EMAIL FAILED:", error);
+    return { success: false, error };
   }
 }
