@@ -1,7 +1,7 @@
 import { sendEmail } from "./sendEmail";
 
 export async function sendWelcomeEmail(email: string, name: string) {
-  await sendEmail({
+  return await sendEmail({
     to: email,
     subject: "Welcome to MECO",
     message: `Hello ${name},
@@ -15,7 +15,7 @@ Thank you for choosing MECO.`,
 }
 
 export async function sendPaymentSuccessEmail(booking: any) {
-  await sendEmail({
+  return await sendEmail({
     to: booking.customer_email,
     subject: "Payment Successful - MECO",
     message: `Hello ${booking.customer_name},
@@ -31,7 +31,7 @@ We will assign a mechanic shortly.`,
 }
 
 export async function sendMechanicAssignedEmail(booking: any, mechanic: any) {
-  await sendEmail({
+  return await sendEmail({
     to: booking.customer_email,
     subject: "Mechanic Assigned - MECO",
     message: `Hello ${booking.customer_name},
@@ -48,7 +48,7 @@ Your mechanic will attend to you as scheduled.`,
 }
 
 export async function sendNewJobEmail(booking: any, mechanic: any) {
-  await sendEmail({
+  return await sendEmail({
     to: mechanic.email,
     subject: "New Job Assigned - MECO",
     message: `Hello ${mechanic.full_name},
@@ -65,7 +65,7 @@ Time: ${booking.booking_time}`,
 }
 
 export async function sendJobAcceptedEmail(booking: any) {
-  await sendEmail({
+  return await sendEmail({
     to: booking.customer_email,
     subject: "Mechanic Accepted Your Booking - MECO",
     message: `Hello ${booking.customer_name},
@@ -81,7 +81,7 @@ The mechanic is preparing to attend to your service.`,
 }
 
 export async function sendJobCompletedEmail(booking: any) {
-  await sendEmail({
+  return await sendEmail({
     to: booking.customer_email,
     subject: "Job Completed - MECO",
     message: `Hello ${booking.customer_name},
@@ -93,7 +93,7 @@ Thank you for trusting MECO.`,
 }
 
 export async function sendMechanicApprovedEmail(mechanic: any) {
-  await sendEmail({
+  return await sendEmail({
     to: mechanic.email,
     subject: "Mechanic Application Approved - MECO",
     message: `Hello ${mechanic.full_name},
@@ -105,7 +105,7 @@ You can now log in and start receiving assigned jobs.`,
 }
 
 export async function sendMechanicRejectedEmail(mechanic: any) {
-  await sendEmail({
+  return await sendEmail({
     to: mechanic.email,
     subject: "Mechanic Application Update - MECO",
     message: `Hello ${mechanic.full_name},
