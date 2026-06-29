@@ -100,7 +100,10 @@ export async function POST(request: Request) {
       status: "confirmed",
     };
 
-    const emailResult = await sendPaymentSuccessEmail(updatedBooking);
+    console.log("ABOUT TO SEND PAYMENT EMAIL:", updatedBooking.customer_email);
+
+const emailResult = await sendPaymentSuccessEmail(updatedBooking);
+
 console.log("PAYMENT EMAIL RESULT:", emailResult);
 
     return NextResponse.json({
