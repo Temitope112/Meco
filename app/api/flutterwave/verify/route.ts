@@ -71,7 +71,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const alreadyPaid = booking.payment_status === "paid";
+    // const alreadyPaid = booking.payment_status === "paid";
 
     const { error: updateError } = await supabaseAdmin
       .from("bookings")
@@ -100,9 +100,8 @@ export async function POST(request: Request) {
       status: "confirmed",
     };
 
-    if (!alreadyPaid) {
-      await sendPaymentSuccessEmail(updatedBooking);
-    }
+    const emailResult = await sendPaymentSuccessEmail(updatedBooking);
+console.log("PAYMENT EMAIL RESULT:", emailResult);
 
     return NextResponse.json({
       message: "Payment verified successfully",
