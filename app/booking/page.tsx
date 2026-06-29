@@ -159,100 +159,113 @@ function BookingCheckoutContent() {
     : "No date selected";
 
   const handleConfirmBooking = async () => {
-    if (!isCartBooking && !selectedService) {
-      alert("Please select a service first.");
+  if (!isCartBooking && !selectedService) {
+    alert("Please select a service first.");
+    return;
+  }
+
+  if (isCartBooking && cartItems.length === 0) {
+    alert("Your cart is empty. Please add services first.");
+    router.push("/dashboard/services");
+    return;
+  }
+
+  if (!customerName || !yearInput || !vehicleModel || !address || !phoneNumber) {
+    alert("Please fill in all vehicle details, phone number and address.");
+    return;
+  }
+
+  try {
+    setIsSubmitting(true);
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user?.email) {
+      alert("Please login again before booking.");
+      router.push("/login");
       return;
     }
 
-    if (isCartBooking && cartItems.length === 0) {
-      alert("Your cart is empty. Please add services first.");
-      router.push("/dashboard/services");
+    const loggedInEmail = user.email.toLowerCase();
+
+    const serviceTitle = isCartBooking
+      ? cartItems
+          .map((item) =>
+            item.service_code
+              ? `${item.service_code} - ${item.title} x${item.quantity}`
+              : `${item.title} x${item.quantity}`
+          )
+          .join(", ")
+      : selectedService?.service_code
+      ? `${selectedService.service_code} - ${selectedService.title}`
+      : selectedService?.title;
+
+    const serviceIdValue = isCartBooking ? null : selectedService?.id;
+    const servicePriceValue = subtotal;
+
+    const { data: booking, error } = await supabase
+      .from("bookings")
+      .insert({
+        service_id: serviceIdValue,
+        service_title: serviceTitle,
+        service_price: servicePriceValue,
+        customer_name: customerName,
+        customer_email: loggedInEmail,
+        customer_phone: phoneNumber,
+        vehicle_year: yearInput,
+        vehicle_model: vehicleModel,
+        address,
+        booking_date: selectedDateText,
+        booking_time: selectedTime,
+        subtotal,
+        taxes_and_fees: taxesAndFees,
+        total,
+        status: "pending",
+        payment_status: "unpaid",
+      })
+      .select()
+      .single();
+
+    if (error) {
+      alert(error.message);
       return;
     }
 
-    if (!customerName || !customerEmail || !yearInput || !vehicleModel || !address || !phoneNumber) {
-      alert("Please fill in all vehicle details, email, phone number and address.");
+    const paymentRes = await fetch("/api/flutterwave/initialize", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: loggedInEmail,
+        amount: total,
+        bookingId: booking.id,
+        customerName,
+      }),
+    });
+
+    const paymentData = await paymentRes.json();
+
+    if (!paymentRes.ok) {
+      alert(paymentData.message || "Unable to start payment.");
       return;
     }
 
-    try {
-      setIsSubmitting(true);
-
-      const serviceTitle = isCartBooking
-        ? cartItems
-            .map((item) =>
-              item.service_code
-                ? `${item.service_code} - ${item.title} x${item.quantity}`
-                : `${item.title} x${item.quantity}`
-            )
-            .join(", ")
-        : selectedService?.service_code
-        ? `${selectedService.service_code} - ${selectedService.title}`
-        : selectedService?.title;
-
-      const serviceIdValue = isCartBooking ? null : selectedService?.id;
-      const servicePriceValue = subtotal;
-
-      const { data: booking, error } = await supabase
-        .from("bookings")
-        .insert({
-          service_id: serviceIdValue,
-          service_title: serviceTitle,
-          service_price: servicePriceValue,
-          customer_name: customerName,
-          customer_email: customerEmail,
-          customer_phone: phoneNumber,
-          vehicle_year: yearInput,
-          vehicle_model: vehicleModel,
-          address,
-          booking_date: selectedDateText,
-          booking_time: selectedTime,
-          subtotal,
-          taxes_and_fees: taxesAndFees,
-          total,
-          status: "pending",
-          payment_status: "unpaid",
-        })
-        .select()
-        .single();
-
-      if (error) {
-        alert(error.message);
-        return;
-      }
-
-      const paymentRes = await fetch("/api/flutterwave/initialize", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: customerEmail,
-          amount: total,
-          bookingId: booking.id,
-          customerName,
-        }),
-      });
-
-      const paymentData = await paymentRes.json();
-
-      if (!paymentRes.ok) {
-        alert(paymentData.message || "Unable to start payment.");
-        return;
-      }
-
-      if (isCartBooking) {
-        localStorage.removeItem("meco_cart");
-      }
-
-      window.location.href = paymentData.paymentLink;
-    } catch (error) {
-      console.log(error);
-      alert("Unable to process booking. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+    if (isCartBooking) {
+      localStorage.removeItem("meco_cart");
     }
-  };
+
+    window.location.href = paymentData.paymentLink;
+  } catch (error) {
+    console.log(error);
+    alert("Unable to process booking. Please try again.");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   if (checkingUser) {
     return (
@@ -422,13 +435,21 @@ function BookingCheckoutContent() {
   className="rounded-lg border border-white/15 bg-white/5 px-4 py-3 outline-none"
 />
 
-                <input
+                {/* <input
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   placeholder="Your email"
                   type="email"
                   className="rounded-lg border border-white/15 bg-white/5 px-4 py-3 outline-none"
-                />
+                /> */}
+
+                <input
+  value={customerEmail}
+  readOnly
+  placeholder="Your email"
+  type="email"
+  className="cursor-not-allowed rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-white/60 outline-none"
+/>
 
                 <input
                   value={vehicleModel}
