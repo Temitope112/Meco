@@ -16,10 +16,15 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import {
-  sendJobAcceptedEmail,
-  sendJobCompletedEmail,
-} from "@/lib/emailNotifications";
+
+type MechanicStatus =
+  | "available"
+  | "busy"
+  | "offline"
+  | "pending"
+  | "rejected";
+
+type JobStatus = "pending" | "confirmed" | "accepted" | "completed";
 
 type Mechanic = {
   id: number;
@@ -27,7 +32,7 @@ type Mechanic = {
   email: string;
   phone: string;
   specialization: string;
-  status: "available" | "busy" | "offline" | "pending" | "rejected";
+  status: MechanicStatus;
   is_approved: boolean;
   image_url: string | null;
 };
@@ -44,7 +49,7 @@ type Booking = {
   booking_date: string;
   booking_time: string;
   payment_status: string;
-  status: string;
+  status: JobStatus;
   total: number;
   assigned_mechanic_id: number | null;
   assigned_mechanic_name: string | null;
@@ -56,71 +61,89 @@ export default function MechanicDashboardPage() {
   const [mechanic, setMechanic] = useState<Mechanic | null>(null);
   const [jobs, setJobs] = useState<Booking[]>([]);
   const [selectedJob, setSelectedJob] = useState<Booking | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
-  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [updatingAvailability, setUpdatingAvailability] = useState(false);
 
   const fetchDashboard = async () => {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
-    if (!user?.email) {
-      router.push("/login");
-      return;
-    }
+      if (userError || !user?.email) {
+        router.replace("/login");
+        return;
+      }
 
-    const { data: mechanicData, error: mechanicError } = await supabase
-      .from("mechanics")
-      .select("*")
-      .eq("email", user.email)
-      .single();
+      const cleanEmail = user.email.trim().toLowerCase();
 
-    if (mechanicError || !mechanicData) {
-      router.push("/mechanic-pending");
-      return;
-    }
+      const { data: mechanicData, error: mechanicError } = await supabase
+        .from("mechanics")
+        .select("*")
+        .eq("email", cleanEmail)
+        .single();
 
-    if (
-      !mechanicData.is_approved ||
-      mechanicData.status === "pending" ||
-      mechanicData.status === "rejected"
-    ) {
-      router.push("/mechanic-pending");
-      return;
-    }
+      if (mechanicError || !mechanicData) {
+        router.replace("/mechanic-pending");
+        return;
+      }
 
-    setMechanic(mechanicData);
+      if (
+        !mechanicData.is_approved ||
+        mechanicData.status === "pending" ||
+        mechanicData.status === "rejected"
+      ) {
+        router.replace("/mechanic-pending");
+        return;
+      }
 
-    const { data: bookingData, error: bookingError } = await supabase
-      .from("bookings")
-      .select("*")
-      .eq("assigned_mechanic_id", mechanicData.id)
-      .order("created_at", { ascending: false });
+      setMechanic(mechanicData as Mechanic);
 
-    if (bookingError) {
-      alert(bookingError.message);
+      const { data: bookingData, error: bookingError } = await supabase
+        .from("bookings")
+        .select("*")
+        .eq("assigned_mechanic_id", mechanicData.id)
+        .order("created_at", { ascending: false });
+
+      if (bookingError) {
+        alert(bookingError.message);
+        return;
+      }
+
+      setJobs((bookingData || []) as Booking[]);
+    } catch (error) {
+      console.error("Unable to load mechanic dashboard:", error);
+      alert("Unable to load your dashboard. Please refresh and try again.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setJobs(bookingData || []);
-    setLoading(false);
   };
 
   useEffect(() => {
-    fetchDashboard();
+    void fetchDashboard();
   }, []);
 
   const updateMechanicAvailability = async (
     status: "available" | "busy" | "offline"
   ) => {
-    if (!mechanic) return;
+    if (!mechanic) {
+      alert("Mechanic profile is unavailable.");
+      return;
+    }
+
+    const previousStatus = mechanic.status;
 
     try {
-      setUpdatingStatus(true);
+      setUpdatingAvailability(true);
+
+      setMechanic((current) =>
+        current ? { ...current, status } : current
+      );
 
       const { error } = await supabase
         .from("mechanics")
@@ -128,63 +151,110 @@ export default function MechanicDashboardPage() {
         .eq("id", mechanic.id);
 
       if (error) {
+        setMechanic((current) =>
+          current ? { ...current, status: previousStatus } : current
+        );
+
         alert(error.message);
         return;
       }
-
-      setMechanic((prev) => (prev ? { ...prev, status } : prev));
     } catch (error) {
-      console.log(error);
-      alert("Unable to update availability.");
+      console.error("Unable to update mechanic availability:", error);
+
+      setMechanic((current) =>
+        current ? { ...current, status: previousStatus } : current
+      );
+
+      alert("Unable to update your availability.");
     } finally {
-      setUpdatingStatus(false);
+      setUpdatingAvailability(false);
     }
   };
 
-  const updateJobStatus = async (bookingId: number, status: string) => {
-    const currentJob = jobs.find((job) => job.id === bookingId);
-
-    if (!currentJob) return;
-
-    setUpdatingId(bookingId);
-
-    const { error } = await supabase
-      .from("bookings")
-      .update({ status })
-      .eq("id", bookingId);
-
-    if (error) {
-      alert(error.message);
-      setUpdatingId(null);
+  const updateJobStatus = async (
+    bookingId: number,
+    status: "accepted" | "completed"
+  ) => {
+    if (!mechanic?.email) {
+      alert("Mechanic account information is unavailable.");
       return;
     }
 
-    const updatedJob = { ...currentJob, status };
+    const currentJob = jobs.find((job) => job.id === bookingId);
 
-    if (status === "accepted") {
-      await sendJobAcceptedEmail(updatedJob);
+    if (!currentJob) {
+      alert("The selected booking could not be found.");
+      return;
     }
 
-    if (status === "completed") {
-      await sendJobCompletedEmail(updatedJob);
+    if (status === "completed" && currentJob.status !== "accepted") {
+      alert("You must accept the job before marking it as completed.");
+      return;
     }
 
-    setJobs((prev) =>
-      prev.map((job) => (job.id === bookingId ? updatedJob : job))
-    );
+    try {
+      setUpdatingId(bookingId);
 
-    setSelectedJob((prev) =>
-      prev && prev.id === bookingId ? { ...prev, status } : prev
-    );
+      const response = await fetch("/api/mechanic/jobs/update-status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          bookingId,
+          status,
+          mechanicEmail: mechanic.email,
+        }),
+      });
 
-    setUpdatingId(null);
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(result.message || "Unable to update the job status.");
+        return;
+      }
+
+      const updatedJob = result.booking as Booking;
+
+      setJobs((currentJobs) =>
+        currentJobs.map((job) =>
+          job.id === bookingId ? updatedJob : job
+        )
+      );
+
+      setSelectedJob((currentJob) =>
+        currentJob?.id === bookingId ? updatedJob : currentJob
+      );
+
+      if (!result.emailSent) {
+        console.warn(
+          "The job status was updated, but the customer email was not sent."
+        );
+      }
+
+      alert(
+        status === "accepted"
+          ? "Job accepted successfully."
+          : "Job marked as completed."
+      );
+    } catch (error) {
+      console.error("Unable to update job status:", error);
+      alert("Unable to update the job. Please try again.");
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   const totalJobs = jobs.length;
+
   const pendingJobs = jobs.filter(
     (job) => job.status === "pending" || job.status === "confirmed"
   ).length;
-  const completedJobs = jobs.filter((job) => job.status === "completed").length;
+
+  const completedJobs = jobs.filter(
+    (job) => job.status === "completed"
+  ).length;
+
   const totalEarnings = jobs
     .filter((job) => job.status === "completed")
     .reduce((sum, job) => sum + Number(job.total || 0), 0);
@@ -194,6 +264,7 @@ export default function MechanicDashboardPage() {
       <div className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-center">
         <div>
           <p className="text-sm text-white/50">Welcome back,</p>
+
           <h1 className="text-3xl font-bold">
             {mechanic?.full_name || "Mechanic"} 👋
           </h1>
@@ -204,18 +275,18 @@ export default function MechanicDashboardPage() {
 
           <select
             value={mechanic?.status || "available"}
-            disabled={updatingStatus}
-            onChange={(e) =>
-              updateMechanicAvailability(
-                e.target.value as "available" | "busy" | "offline"
+            disabled={!mechanic || updatingAvailability}
+            onChange={(event) =>
+              void updateMechanicAvailability(
+                event.target.value as "available" | "busy" | "offline"
               )
             }
-            className={`rounded-full border border-white/10 px-4 py-2 text-sm font-medium outline-none disabled:opacity-60 ${
+            className={`rounded-full border border-white/10 px-4 py-2 text-sm font-medium outline-none disabled:cursor-not-allowed disabled:opacity-60 ${
               mechanic?.status === "available"
                 ? "bg-green-500/20 text-green-400"
                 : mechanic?.status === "busy"
-                ? "bg-yellow-500/20 text-yellow-400"
-                : "bg-red-500/20 text-red-400"
+                  ? "bg-yellow-500/20 text-yellow-400"
+                  : "bg-red-500/20 text-red-400"
             }`}
           >
             <option value="available">Available</option>
@@ -252,15 +323,27 @@ export default function MechanicDashboardPage() {
       </div>
 
       <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-6">
-        <h2 className="mb-6 text-xl font-bold">Recent Assigned Jobs</h2>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <h2 className="text-xl font-bold">Recent Assigned Jobs</h2>
+
+          <button
+            type="button"
+            onClick={() => void fetchDashboard()}
+            disabled={loading}
+            className="rounded-lg border border-white/10 px-4 py-2 text-sm font-medium transition hover:bg-white/10 disabled:opacity-60"
+          >
+            Refresh
+          </button>
+        </div>
 
         {loading ? (
           <p className="text-white/50">Loading assigned jobs...</p>
         ) : jobs.length === 0 ? (
           <div className="rounded-xl border border-white/10 bg-black/30 p-8 text-center">
             <h3 className="text-xl font-bold">No assigned jobs yet.</h3>
+
             <p className="mt-2 text-white/50">
-              New jobs will appear here once admin assigns them to you.
+              New jobs will appear here once an admin assigns them to you.
             </p>
           </div>
         ) : (
@@ -283,9 +366,11 @@ export default function MechanicDashboardPage() {
                   <tr key={job.id} className="border-t border-white/10">
                     <td className="py-4">
                       <p className="font-medium">{job.customer_name}</p>
+
                       <p className="text-xs text-white/40">
                         {job.customer_email}
                       </p>
+
                       <p className="text-xs text-white/40">
                         {job.customer_phone || "No phone number"}
                       </p>
@@ -295,7 +380,11 @@ export default function MechanicDashboardPage() {
 
                     <td className="max-w-[240px] text-white/60">
                       <div className="flex gap-2">
-                        <MapPin size={15} className="mt-1 text-yellow-400" />
+                        <MapPin
+                          size={15}
+                          className="mt-1 shrink-0 text-yellow-400"
+                        />
+
                         <span>{job.address || "No address"}</span>
                       </div>
                     </td>
@@ -313,29 +402,11 @@ export default function MechanicDashboardPage() {
                     </td>
 
                     <td>
-                      <span
-                        className={`rounded-md px-3 py-1 text-xs ${
-                          job.payment_status === "paid"
-                            ? "bg-green-500/20 text-green-400"
-                            : "bg-red-500/20 text-red-400"
-                        }`}
-                      >
-                        {job.payment_status || "unpaid"}
-                      </span>
+                      <PaymentBadge status={job.payment_status} />
                     </td>
 
                     <td>
-                      <span
-                        className={`rounded-md px-3 py-1 text-xs ${
-                          job.status === "completed"
-                            ? "bg-green-500/20 text-green-400"
-                            : job.status === "accepted"
-                            ? "bg-blue-500/20 text-blue-400"
-                            : "bg-yellow-500/20 text-yellow-400"
-                        }`}
-                      >
-                        {job.status || "pending"}
-                      </span>
+                      <JobStatusBadge status={job.status} />
                     </td>
 
                     <td>
@@ -354,11 +425,13 @@ export default function MechanicDashboardPage() {
                               type="button"
                               disabled={updatingId === job.id}
                               onClick={() =>
-                                updateJobStatus(job.id, "accepted")
+                                void updateJobStatus(job.id, "accepted")
                               }
-                              className="rounded-lg bg-yellow-400 px-3 py-2 text-xs font-bold text-black transition hover:bg-yellow-300 disabled:opacity-60"
+                              className="rounded-lg bg-yellow-400 px-3 py-2 text-xs font-bold text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                              Accept Job
+                              {updatingId === job.id
+                                ? "Updating..."
+                                : "Accept Job"}
                             </button>
                           )}
 
@@ -367,11 +440,13 @@ export default function MechanicDashboardPage() {
                             type="button"
                             disabled={updatingId === job.id}
                             onClick={() =>
-                              updateJobStatus(job.id, "completed")
+                              void updateJobStatus(job.id, "completed")
                             }
-                            className="rounded-lg bg-green-500 px-3 py-2 text-xs font-bold text-white transition hover:bg-green-600 disabled:opacity-60"
+                            className="rounded-lg bg-green-500 px-3 py-2 text-xs font-bold text-white transition hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-60"
                           >
-                            Mark Completed
+                            {updatingId === job.id
+                              ? "Updating..."
+                              : "Mark Completed"}
                           </button>
                         )}
                       </div>
@@ -384,68 +459,71 @@ export default function MechanicDashboardPage() {
         )}
       </div>
 
-      <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {jobs.slice(0, 3).map((job) => (
-          <div
-            key={job.id}
-            className="rounded-2xl border border-white/10 bg-white/5 p-5"
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <div className="rounded-full bg-yellow-400 p-3 text-black">
-                <Wrench size={20} />
+      {!loading && jobs.length > 0 && (
+        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {jobs.slice(0, 3).map((job) => (
+            <div
+              key={job.id}
+              className="rounded-2xl border border-white/10 bg-white/5 p-5"
+            >
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div className="rounded-full bg-yellow-400 p-3 text-black">
+                  <Wrench size={20} />
+                </div>
+
+                <JobStatusBadge status={job.status} />
               </div>
 
-              <span
-                className={`rounded-md px-3 py-1 text-xs ${
-                  job.status === "completed"
-                    ? "bg-green-500/20 text-green-400"
-                    : job.status === "accepted"
-                    ? "bg-blue-500/20 text-blue-400"
-                    : "bg-yellow-500/20 text-yellow-400"
-                }`}
+              <h3 className="text-xl font-bold">{job.service_title}</h3>
+
+              <div className="mt-4 space-y-2 text-sm text-white/60">
+                <p>Customer: {job.customer_name}</p>
+                <p>Phone: {job.customer_phone || "No phone number"}</p>
+
+                <p>
+                  Vehicle: {job.vehicle_year} {job.vehicle_model}
+                </p>
+
+                <p>Address: {job.address || "No address"}</p>
+
+                <p>
+                  Date: {job.booking_date} • {job.booking_time}
+                </p>
+              </div>
+
+              <div className="mt-5 border-t border-white/10 pt-4">
+                <p className="text-sm text-white/50">Total Amount</p>
+
+                <p className="text-2xl font-bold text-yellow-400">
+                  ₦{Number(job.total || 0).toLocaleString()}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedJob(job)}
+                className="mt-5 w-full rounded-lg border border-white/10 py-3 text-sm font-bold transition hover:bg-white/10"
               >
-                {job.status}
-              </span>
+                View Details
+              </button>
             </div>
-
-            <h3 className="text-xl font-bold">{job.service_title}</h3>
-
-            <div className="mt-4 space-y-2 text-sm text-white/60">
-              <p>Customer: {job.customer_name}</p>
-              <p>Phone: {job.customer_phone || "No phone number"}</p>
-              <p>
-                Vehicle: {job.vehicle_year} {job.vehicle_model}
-              </p>
-              <p>Address: {job.address || "No address"}</p>
-              <p>
-                Date: {job.booking_date} • {job.booking_time}
-              </p>
-            </div>
-
-            <div className="mt-5 border-t border-white/10 pt-4">
-              <p className="text-sm text-white/50">Total Amount</p>
-              <p className="text-2xl font-bold text-yellow-400">
-                ₦{Number(job.total || 0).toLocaleString()}
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setSelectedJob(job)}
-              className="mt-5 w-full rounded-lg border border-white/10 py-3 text-sm font-bold transition hover:bg-white/10"
-            >
-              View Details
-            </button>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {selectedJob && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 p-4">
-          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-white/10 bg-[#080d0e] p-6 shadow-2xl">
-            <div className="mb-6 flex items-center justify-between">
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setSelectedJob(null)}
+        >
+          <div
+            className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-white/10 bg-[#080d0e] p-6 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-6 flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-bold">Job Details</h2>
+
                 <p className="mt-1 text-sm text-white/50">
                   Booking #{selectedJob.id}
                 </p>
@@ -455,14 +533,15 @@ export default function MechanicDashboardPage() {
                 type="button"
                 onClick={() => setSelectedJob(null)}
                 className="rounded-lg p-2 transition hover:bg-white/10"
+                aria-label="Close job details"
               >
                 <X size={22} />
               </button>
             </div>
 
             <div className="mb-6 flex flex-wrap gap-3">
-              <StatusBadge label={`Payment: ${selectedJob.payment_status}`} />
-              <StatusBadge label={`Job: ${selectedJob.status}`} />
+              <PaymentBadge status={selectedJob.payment_status} />
+              <JobStatusBadge status={selectedJob.status} />
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
@@ -534,11 +613,13 @@ export default function MechanicDashboardPage() {
                     type="button"
                     disabled={updatingId === selectedJob.id}
                     onClick={() =>
-                      updateJobStatus(selectedJob.id, "accepted")
+                      void updateJobStatus(selectedJob.id, "accepted")
                     }
-                    className="rounded-lg bg-yellow-400 px-5 py-3 text-sm font-bold text-black transition hover:bg-yellow-300 disabled:opacity-60"
+                    className="rounded-lg bg-yellow-400 px-5 py-3 text-sm font-bold text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Accept Job
+                    {updatingId === selectedJob.id
+                      ? "Updating..."
+                      : "Accept Job"}
                   </button>
                 )}
 
@@ -547,11 +628,13 @@ export default function MechanicDashboardPage() {
                   type="button"
                   disabled={updatingId === selectedJob.id}
                   onClick={() =>
-                    updateJobStatus(selectedJob.id, "completed")
+                    void updateJobStatus(selectedJob.id, "completed")
                   }
-                  className="rounded-lg bg-green-500 px-5 py-3 text-sm font-bold text-white transition hover:bg-green-600 disabled:opacity-60"
+                  className="rounded-lg bg-green-500 px-5 py-3 text-sm font-bold text-white transition hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Mark Completed
+                  {updatingId === selectedJob.id
+                    ? "Updating..."
+                    : "Mark Completed"}
                 </button>
               )}
 
@@ -581,8 +664,9 @@ function StatCard({
 }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-      <div className="mb-5 flex items-center justify-between">
+      <div className="mb-5 flex items-center justify-between gap-3">
         <p className="text-sm text-white/60">{title}</p>
+
         <div className="rounded-xl bg-yellow-400 p-2 text-black">{icon}</div>
       </div>
 
@@ -613,10 +697,36 @@ function Detail({
   );
 }
 
-function StatusBadge({ label }: { label: string }) {
+function PaymentBadge({ status }: { status: string }) {
+  const isPaid = status === "paid";
+
   return (
-    <span className="rounded-full bg-yellow-400/10 px-4 py-2 text-xs font-bold text-yellow-400">
-      {label}
+    <span
+      className={`rounded-md px-3 py-1 text-xs font-medium ${
+        isPaid
+          ? "bg-green-500/20 text-green-400"
+          : "bg-red-500/20 text-red-400"
+      }`}
+    >
+      Payment: {status || "unpaid"}
+    </span>
+  );
+}
+
+function JobStatusBadge({ status }: { status: JobStatus }) {
+  return (
+    <span
+      className={`rounded-md px-3 py-1 text-xs font-medium ${
+        status === "completed"
+          ? "bg-green-500/20 text-green-400"
+          : status === "accepted"
+            ? "bg-blue-500/20 text-blue-400"
+            : status === "confirmed"
+              ? "bg-purple-500/20 text-purple-400"
+              : "bg-yellow-500/20 text-yellow-400"
+      }`}
+    >
+      Job: {status || "pending"}
     </span>
   );
 }

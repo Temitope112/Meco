@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { X } from "lucide-react";
-import {
-  sendMechanicAssignedEmail,
-  sendNewJobEmail,
-} from "@/lib/emailNotifications";
+// import {
+//   sendMechanicAssignedEmail,
+//   sendNewJobEmail,
+// } from "@/lib/emailNotifications";
 
 type Booking = {
   id: number;
@@ -110,28 +110,25 @@ export default function AdminBookingsPage() {
     try {
       setAssigning(true);
 
-      const { error } = await supabase
-        .from("bookings")
-        .update({
-          assigned_mechanic_id: mechanic.id,
-          assigned_mechanic_name: mechanic.full_name,
-        })
-        .eq("id", selectedBooking.id);
+      const response = await fetch("/api/admin/assign-mechanic", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    bookingId: selectedBooking.id,
+    mechanicId: mechanic.id,
+  }),
+});
 
-      if (error) {
-        alert(error.message);
-        return;
-      }
+const result = await response.json();
 
-      const updatedBooking = {
-  ...selectedBooking,
-  assigned_mechanic_id: mechanic.id,
-  assigned_mechanic_name: mechanic.full_name,
-};
+if (!response.ok) {
+  alert(result.message);
+  return;
+}
 
-await sendMechanicAssignedEmail(updatedBooking, mechanic);
-
-await sendNewJobEmail(updatedBooking, mechanic);
+const updatedBooking = result.booking;
 
 setSelectedBooking(updatedBooking);
 
